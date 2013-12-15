@@ -1,5 +1,5 @@
 base   latexit
-author Adam Ku&#269;era
+author Adam Kučera
 email  adam.kucera@wrent.cz
 date   2013-12-03
 name   latexit plugin

@@ -1,27 +1,31 @@
 <?php
+
 /**
  * DokuWiki Plugin latexit (Syntax Component)
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
- * @author  Adam Ku&#269;era <adam.kucera@wrent.cz>
+ * @author  Adam Kučera <adam.kucera@wrent.cz>
  */
-
 // must be run within Dokuwiki
-if (!defined('DOKU_INC')) die();
+if (!defined('DOKU_INC'))
+    die();
 
 class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
+
     /**
      * @return string Syntax mode type
      */
     public function getType() {
         return 'FIXME: container|baseonly|formatting|substition|protected|disabled|paragraphs';
     }
+
     /**
      * @return string Paragraph type
      */
     public function getPType() {
         return 'FIXME: normal|block|stack';
     }
+
     /**
      * @return int Sort order - Low numbers go before high numbers
      */
@@ -35,7 +39,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('<FIXME>',$mode,'plugin_latexit');
+        $this->Lexer->addSpecialPattern('<FIXME>', $mode, 'plugin_latexit');
 //        $this->Lexer->addEntryPattern('<FIXME>',$mode,'plugin_latexit');
     }
 
@@ -52,7 +56,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param Doku_Handler    $handler The handler
      * @return array Data for the renderer
      */
-    public function handle($match, $state, $pos, &$handler){
+    public function handle($match, $state, $pos, &$handler) {
         $data = array();
 
         return $data;
@@ -67,10 +71,10 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, &$renderer, $data) {
-        if($mode != 'xhtml') return false;
+        if ($mode != 'xhtml')
+            return false;
 
         return true;
     }
-}
 
-// vim:ts=4:sw=4:et:
+}

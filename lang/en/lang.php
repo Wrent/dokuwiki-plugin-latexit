@@ -2,7 +2,7 @@
 /**
  * English language file for latexit plugin
  *
- * @author Adam Ku&#269;era <adam.kucera@wrent.cz>
+ * @author Adam Kučera <adam.kucera@wrent.cz>
  */
 
 // menu entry for admin plugins
@@ -10,7 +10,3 @@
 
 // custom language strings for the plugin
 // $lang['fixme'] = 'FIXME';
-
-
-
-//Setup VIM: ex: et ts=4 :

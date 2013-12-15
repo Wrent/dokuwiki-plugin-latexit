@@ -1,13 +1,14 @@
 <?php
+
 /**
  * DokuWiki Plugin latexit (Action Component)
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
- * @author  Adam Ku&#269;era <adam.kucera@wrent.cz>
+ * @author  Adam Kučera <adam.kucera@wrent.cz>
  */
-
 // must be run within Dokuwiki
-if(!defined('DOKU_INC')) die();
+if (!defined('DOKU_INC'))
+    die();
 
 class action_plugin_latexit extends DokuWiki_Action_Plugin {
 
@@ -19,8 +20,7 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
      */
     public function register(Doku_Event_Handler &$controller) {
 
-       $controller->register_hook('ACTION_ACT_PREPROCESS', 'FIXME', $this, 'handle_action_act_preprocess');
-   
+        $controller->register_hook('ACTION_ACT_PREPROCESS', 'FIXME', $this, 'handle_action_act_preprocess');
     }
 
     /**
@@ -31,10 +31,8 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
      *                           handler was registered]
      * @return void
      */
-
     public function handle_action_act_preprocess(Doku_Event &$event, $param) {
+        
     }
 
 }
-
-// vim:ts=4:sw=4:et:
