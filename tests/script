@@ -1,0 +1,13 @@
+#! /bin/bash
+echo '' > log
+for ((i = 1; i <= $1; i++)); do
+   URL=http://localhost/_bp/doku.php?id=test:test
+   URL=$URL${i}
+   URL=$URL"&do=export_latexit"
+   wget -O exported/test${i}_exported.latex $URL
+done
+for ((i = 1; i <= $1; i++)); do
+   diff -bB exported/test${i}_exported.latex my/test${i}.latex >> log
+   echo '--------------KONEC '$i'------------' >> log
+done
+cat log

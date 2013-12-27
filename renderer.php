@@ -11,9 +11,11 @@ if (!defined('DOKU_INC'))
     die();
 
 require_once DOKU_INC . 'inc/parser/xhtml.php';
-require_once 'conf/metadata.php';
+require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 
 class renderer_plugin_latexit extends Doku_Renderer_xhtml {
+
+    private $packages;
 
     /**
      * Make available as LaTeX renderer
@@ -24,7 +26,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         }
         return false;
     }
-    
+
     /**
      * Return the rendering format of the renderer
      */
@@ -32,173 +34,505 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         return 'latex';
     }
 
-    function document_start() {}
+    /**
+     * function is called, when a document is started to being rendered.
+     * It adds headers to the LaTeX document and sets the browser headers of the file.
+     */
+    function document_start() {
+        //initialize variables
+        $this->packages = array();
+        //this is default LaTeX header right now, can be changed in configuration
+        $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
+                . "\\usepackage[utf8]{inputenc}\n"
+                . "\\usepackage[czech]{babel}\n";
+        $packages = '~~~PACKAGES~~~';
+        $document_start = "\\begin{document}\n"
+                . "\n";
+        //FIXME if conf
+        $header = $header_default;
+        $this->doc .= $header . $packages . $document_start;
 
-    function document_end() {}
+        //set the headers, so the browsers knows, this is not the HTML file
+        header('Content-Type: application/x-latex');
+        header('Content-Disposition: attachment; filename="output.latex";');
+    }
 
-    function render_TOC() { return ''; }
+    /**
+     * function is called, when a document ends its rendering to finish the document
+     * It finalizes the document.
+     */
+    function document_end() {
+        $footer_default = "\n\n"
+                . "\\end{document}\n";
 
-    function toc_additem($id, $text, $level) {}
+        $this->doc .= $footer_default;
 
-    function header($text, $level, $pos) {}
+        //insert all packages collected during rendering
+        $this->_insertPackages();
+    }
 
-    function section_open($level) {}
+    function render_TOC() {
+        return '';
+    }
 
-    function section_close() {}
+    function toc_additem($id, $text, $level) {
+        
+    }
 
-    function cdata($text) {}
+    function header($text, $level, $pos) {
+        
+    }
 
-    function p_open() {}
+    function section_open($level) {
+        
+    }
 
-    function p_close() {}
+    function section_close() {
+        
+    }
 
-    function linebreak() {}
+    /*
+     * Basic funcion called, when a text not from DokuWiki syntax is read
+     * It adds the data to the document, potentionally dangerous characters for
+     * LaTeX are escaped or removed.
+     */
 
-    function hr() {}
+    function cdata($text) {
+        $this->doc .= $this->_latexSpecialChars($text);
+    }
 
-    function strong_open() {}
+    /*
+     * Function is called, when renderer finds a new paragraph.
+     * It makes new paragraph in LaTeX Document.
+     */
 
-    function strong_close() {}
+    function p_open() {
+        $this->doc .= "\n\n";
+    }
 
-    function emphasis_open() {}
+    /*
+     * Function is called, when renderer finds the end of a paragraph.
+     */
 
-    function emphasis_close() {}
+    function p_close() {
+        //there is nothing done with that in LaTeX
+    }
 
-    function underline_open() {}
+    /*
+     * Function is called, when renderer finds a linebreak.
+     * It adds new line in LaTeX Document.
+     */
 
-    function underline_close() {}
+    function linebreak() {
+        $this->doc .= "\\\\";
+    }
 
-    function monospace_open() {}
+    function hr() {
+        
+    }
 
-    function monospace_close() {}
+    /*
+     * function is called, when renderer finds a strong text
+     * It calls command for strong text in LaTeX Document.
+     */
 
-    function subscript_open() {}
+    function strong_open() {
+        $this->_open('textbf');
+    }
 
-    function subscript_close() {}
+    /*
+     * function is called, when renderer finds the end of a strong text 
+     */
 
-    function superscript_open() {}
+    function strong_close() {
+        $this->_close();
+    }
 
-    function superscript_close() {}
+    /*
+     * function is called, when renderer finds an emphasised text
+     * It calls command for emphasised text in LaTeX Document.
+     */
 
-    function deleted_open() {}
+    function emphasis_open() {
+        $this->_open('emph');
+    }
 
-    function deleted_close() {}
+    /*
+     * function is called, when renderer finds the end of an emphasised text
+     */
 
-    function footnote_open() {}
+    function emphasis_close() {
+        $this->_close();
+    }
 
-    function footnote_close() {}
+    /*
+     * function is called, when renderer finds an underlined text
+     * It calls command for underlined text in LaTeX Document.
+     */
 
-    function listu_open() {}
+    function underline_open() {
+        $this->_open('underline');
+    }
 
-    function listu_close() {}
+    /*
+     * function is called, when renderer finds the end of an underlined text
+     */
 
-    function listo_open() {}
+    function underline_close() {
+        $this->_close();
+    }
 
-    function listo_close() {}
+    /*
+     * function is called, when renderer finds a monospace text 
+     * (all letters have same width)
+     * It calls command for monospace text in LaTeX Document.
+     */
 
-    function listitem_open($level) {}
+    function monospace_open() {
+        $this->_open('texttt');
+    }
 
-    function listitem_close() {}
+    /*
+     * function is called, when renderer finds the end of a monospace text 
+     * (all letters have same width)
+     */
 
-    function listcontent_open() {}
+    function monospace_close() {
+        $this->_close();
+    }
 
-    function listcontent_close() {}
+    /*
+     * function is called, when renderer finds a subscript 
+     * It adds needed package and calls command for subscript in LaTeX Document.
+     */
 
-    function unformatted($text) {}
+    function subscript_open() {
+        $package = new Package('fixltx2e');
+        $this->_addPackage($package);
+        $this->_open('textsubscript');
+    }
 
-    function php($text) {}
+    /*
+     * function is called, when renderer finds the end of a subscript 
+     */
 
-    function phpblock($text) {}
+    function subscript_close() {
+        $this->_close();
+    }
 
-    function html($text) {}
+    /*
+     * function is called, when renderer finds a superscript 
+     * It adds needed package and calls command for superscript in LaTeX Document.
+     */
 
-    function htmlblock($text) {}
+    function superscript_open() {
+        $package = new Package('fixltx2e');
+        $this->_addPackage($package);
+        $this->_open('textsuperscript');
+    }
 
-    function preformatted($text) {}
+    /*
+     * function is called, when renderer finds the end of a superscript 
+     */
 
-    function quote_open() {}
+    function superscript_close() {
+        $this->_close();
+    }
 
-    function quote_close() {}
+    /*
+     * function is called, when renderer finds a deleted text
+     * It adds needed package and calls command for deleted text in LaTeX Document.
+     */
 
-    function file($text, $lang = null, $file = null ) {}
+    function deleted_open() {
+        $package = new Package('ulem');
+        $package->addParameter('normalem');
+        $this->_addPackage($package);
+        $this->_open('sout');
+    }
 
-    function code($text, $lang = null, $file = null ) {}
+    /*
+     * function is called, when renderer finds the end of a deleted text
+     */
 
-    function acronym($acronym) {}
+    function deleted_close() {
+        $this->_close();
+    }
 
-    function smiley($smiley) {}
+    /*
+     * function is called, when renderer finds a footnote
+     * It calls footnote command in LaTeX Document.
+     */
 
-    function wordblock($word) {}
+    function footnote_open() {
+        $this->_open('footnote');
+    }
 
-    function entity($entity) {}
+    /*
+     * function is called, when renderer finds the end of a footnote
+     */
+
+    function footnote_close() {
+        $this->_close();
+    }
+
+    function listu_open() {
+        
+    }
+
+    function listu_close() {
+        
+    }
+
+    function listo_open() {
+        
+    }
+
+    function listo_close() {
+        
+    }
+
+    function listitem_open($level) {
+        
+    }
+
+    function listitem_close() {
+        
+    }
+
+    function listcontent_open() {
+        
+    }
+
+    function listcontent_close() {
+        
+    }
+
+    function unformatted($text) {
+        
+    }
+
+    function php($text) {
+        
+    }
+
+    function phpblock($text) {
+        
+    }
+
+    function html($text) {
+        
+    }
+
+    function htmlblock($text) {
+        
+    }
+
+    function preformatted($text) {
+        
+    }
+
+    function quote_open() {
+        
+    }
+
+    function quote_close() {
+        
+    }
+
+    function file($text, $lang = null, $file = null) {
+        
+    }
+
+    function code($text, $lang = null, $file = null) {
+        
+    }
+
+    function acronym($acronym) {
+        
+    }
+
+    function smiley($smiley) {
+        
+    }
+
+    function wordblock($word) {
+        
+    }
+
+    function entity($entity) {
+        
+    }
 
     // 640x480 ($x=640, $y=480)
-    function multiplyentity($x, $y) {}
+    function multiplyentity($x, $y) {
+        
+    }
 
-    function singlequoteopening() {}
+    function singlequoteopening() {
+        
+    }
 
-    function singlequoteclosing() {}
+    function singlequoteclosing() {
+        
+    }
 
-    function apostrophe() {}
+    function apostrophe() {
+        
+    }
 
-    function doublequoteopening() {}
+    function doublequoteopening() {
+        
+    }
 
-    function doublequoteclosing() {}
+    function doublequoteclosing() {
+        
+    }
 
     // $link like 'SomePage'
-    function camelcaselink($link) {}
+    function camelcaselink($link) {
+        
+    }
 
-    function locallink($hash, $name = NULL) {}
+    function locallink($hash, $name = NULL) {
+        
+    }
 
     // $link like 'wiki:syntax', $title could be an array (media)
-    function internallink($link, $title = NULL) {}
+    function internallink($link, $title = NULL) {
+        
+    }
 
     // $link is full URL with scheme, $title could be an array (media)
-    function externallink($link, $title = NULL) {}
+    function externallink($link, $title = NULL) {
+        
+    }
 
-    function rss ($url,$params) {}
+    function rss($url, $params) {
+        
+    }
 
     // $link is the original link - probably not much use
     // $wikiName is an indentifier for the wiki
     // $wikiUri is the URL fragment to append to some known URL
-    function interwikilink($link, $title = NULL, $wikiName, $wikiUri) {}
+    function interwikilink($link, $title = NULL, $wikiName, $wikiUri) {
+        
+    }
 
     // Link to file on users OS, $title could be an array (media)
-    function filelink($link, $title = NULL) {}
+    function filelink($link, $title = NULL) {
+        
+    }
 
     // Link to a Windows share, , $title could be an array (media)
-    function windowssharelink($link, $title = NULL) {}
+    function windowssharelink($link, $title = NULL) {
+        
+    }
 
 //  function email($address, $title = NULL) {}
-    function emaillink($address, $name = NULL) {}
+    function emaillink($address, $name = NULL) {
+        
+    }
 
-    function internalmedia ($src, $title=NULL, $align=NULL, $width=NULL,
-                            $height=NULL, $cache=NULL, $linking=NULL) {}
+    function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        
+    }
 
-    function externalmedia ($src, $title=NULL, $align=NULL, $width=NULL,
-                            $height=NULL, $cache=NULL, $linking=NULL) {}
+    function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        
+    }
 
-    function internalmedialink (
-        $src,$title=NULL,$align=NULL,$width=NULL,$height=NULL,$cache=NULL
-        ) {}
+    function internalmedialink(
+    $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
+    ) {
+        
+    }
 
     function externalmedialink(
-        $src,$title=NULL,$align=NULL,$width=NULL,$height=NULL,$cache=NULL
-        ) {}
+    $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
+    ) {
+        
+    }
 
-    function table_open($maxcols = null, $numrows = null, $pos = null){}
+    function table_open($maxcols = null, $numrows = null, $pos = null) {
+        
+    }
 
-    function table_close($pos = null){}
+    function table_close($pos = null) {
+        
+    }
 
-    function tablerow_open(){}
+    function tablerow_open() {
+        
+    }
 
-    function tablerow_close(){}
+    function tablerow_close() {
+        
+    }
 
-    function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1){}
+    function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
+        
+    }
 
-    function tableheader_close(){}
+    function tableheader_close() {
+        
+    }
 
-    function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1){}
+    function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
+        
+    }
 
-    function tablecell_close(){}
+    function tablecell_close() {
+        
+    }
+
+    /*
+     * Syntax of almost every LaTeX command is alway the same.
+     * @param $command The name of a LaTeX command.
+     */
+
+    private function _open($command) {
+        $this->doc .= '\\' . $command . '{';
+    }
+
+    /*
+     * Closing tag of all LaTeX commands is always same and will be called
+     * in almost every _close function.
+     */
+
+    private function _close() {
+        $this->doc .= '}';
+    }
+
+    /*
+     * Adds name of new package to packages array, but prevents duplicates
+     * @param $package LaTeX package to be used in rendering.
+     */
+
+    private function _addPackage($package) {
+        foreach ($this->packages as $p) {
+            if ($p->getName() == $package->getName()) {
+                return;
+            }
+        }
+        $this->packages[] = $package;
+    }
+
+    /*
+     * Inserts all packages collected during the rendering to the head of the document.
+     */
+
+    private function _insertPackages() {
+        foreach ($this->packages as $package) {
+            $param = $this->_latexSpecialChars($package->printParameters());
+            $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
+        }
+        $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
+    }
+
+    private function _latexSpecialChars($text) {
+        //FIXME
+        return $text;
+    }
+
 }

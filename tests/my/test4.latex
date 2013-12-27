@@ -1,0 +1,16 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\begin{document}
+
+\section{Nadpis 1}
+
+\subsection{Nadpis 2}
+
+\subsubsection{Nadpis 3}
+
+\paragraph{Nadpis 4}
+
+\subparagraph{Nadpis 5}
+
+\end{document}

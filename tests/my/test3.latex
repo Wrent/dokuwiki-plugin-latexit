@@ -1,0 +1,25 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\begin{document}
+
+\begin{itemize}
+ \item Seznam položka 1
+ \item Seznam položka 2
+ \begin{itemize}
+  \item Vnořená položka 1
+ \end{itemize}
+ \item Seznam položka 3
+\end{itemize}
+
+\begin{enumerate}
+ \item Seznam položka 1
+ \item Seznam položka 2
+ \begin{enumerate}
+  \item Vnořená položka 1
+ \end{enumerate}
+ \item Seznam položka 3
+\end{enumerate}
+
+
+\end{document}
