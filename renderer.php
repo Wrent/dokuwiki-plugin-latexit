@@ -91,7 +91,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         
     }
 
-    /*
+    /**
      * Basic funcion called, when a text not from DokuWiki syntax is read
      * It adds the data to the document, potentionally dangerous characters for
      * LaTeX are escaped or removed.
@@ -101,7 +101,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->doc .= $this->_latexSpecialChars($text);
     }
 
-    /*
+    /**
      * Function is called, when renderer finds a new paragraph.
      * It makes new paragraph in LaTeX Document.
      */
@@ -110,7 +110,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->doc .= "\n\n";
     }
 
-    /*
+    /**
      * Function is called, when renderer finds the end of a paragraph.
      */
 
@@ -118,7 +118,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         //there is nothing done with that in LaTeX
     }
 
-    /*
+    /**
      * Function is called, when renderer finds a linebreak.
      * It adds new line in LaTeX Document.
      */
@@ -131,7 +131,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         
     }
 
-    /*
+    /**
      * function is called, when renderer finds a strong text
      * It calls command for strong text in LaTeX Document.
      */
@@ -140,7 +140,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('textbf');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a strong text 
      */
 
@@ -148,7 +148,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds an emphasised text
      * It calls command for emphasised text in LaTeX Document.
      */
@@ -157,7 +157,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('emph');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of an emphasised text
      */
 
@@ -165,7 +165,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds an underlined text
      * It calls command for underlined text in LaTeX Document.
      */
@@ -174,7 +174,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('underline');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of an underlined text
      */
 
@@ -182,7 +182,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds a monospace text 
      * (all letters have same width)
      * It calls command for monospace text in LaTeX Document.
@@ -192,7 +192,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('texttt');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a monospace text 
      * (all letters have same width)
      */
@@ -201,7 +201,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds a subscript 
      * It adds needed package and calls command for subscript in LaTeX Document.
      */
@@ -212,7 +212,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('textsubscript');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a subscript 
      */
 
@@ -220,7 +220,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds a superscript 
      * It adds needed package and calls command for superscript in LaTeX Document.
      */
@@ -231,7 +231,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('textsuperscript');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a superscript 
      */
 
@@ -239,7 +239,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds a deleted text
      * It adds needed package and calls command for deleted text in LaTeX Document.
      */
@@ -251,7 +251,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('sout');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a deleted text
      */
 
@@ -259,7 +259,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
-    /*
+    /**
      * function is called, when renderer finds a footnote
      * It calls footnote command in LaTeX Document.
      */
@@ -268,7 +268,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_open('footnote');
     }
 
-    /*
+    /**
      * function is called, when renderer finds the end of a footnote
      */
 
@@ -486,7 +486,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         
     }
 
-    /*
+    /**
      * Syntax of almost every LaTeX command is alway the same.
      * @param $command The name of a LaTeX command.
      */
@@ -495,7 +495,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->doc .= '\\' . $command . '{';
     }
 
-    /*
+    /**
      * Closing tag of all LaTeX commands is always same and will be called
      * in almost every _close function.
      */
@@ -504,7 +504,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->doc .= '}';
     }
 
-    /*
+    /**
      * Adds name of new package to packages array, but prevents duplicates
      * @param $package LaTeX package to be used in rendering.
      */
@@ -518,7 +518,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->packages[] = $package;
     }
 
-    /*
+    /**
      * Inserts all packages collected during the rendering to the head of the document.
      */
 

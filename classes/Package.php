@@ -11,7 +11,7 @@ class Package {
     private $name;
     private $parameters;
 
-    /*
+    /**
      * Creates an Package object.
      * @param $name Name of the package
      */
@@ -21,7 +21,7 @@ class Package {
         $this->parameters = array();
     }
 
-    /*
+    /**
      * Adds new parameter to the package and prevents duplicates.
      * @param $name Name of the parameter
      */
@@ -32,7 +32,7 @@ class Package {
         }
     }
 
-    /*
+    /**
      * Prints all parameters, so they can be used in LaTeX \usepackage command
      * @return String List of parameters in right format.
      */
