@@ -82,8 +82,34 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
+    /**
+     * Function is called, when renderer finds a new header.
+     * It calls the LaTeX command for an appropriate level.
+     * @param type $text Text of the header
+     * @param type $level Level of the header.
+     * @param type $pos ???
+     */
     function header($text, $level, $pos) {
-        
+        switch ($level) {
+            case 1:
+                $this->_header('section', $text);
+                break;
+            case 2:
+                $this->_header('subsection', $text);
+                break;
+            case 3:
+                $this->_header('subsubsection', $text);
+                break;
+            case 4:
+                $this->_header('paragraph', $text);
+                break;
+            case 5:
+                $this->_header('subparagraph', $text);
+                break;
+            default:
+                $this->doc .= $this->_latexSpecialChars($text);
+                break;
+        }
     }
 
     function section_open($level) {
@@ -99,7 +125,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It adds the data to the document, potentionally dangerous characters for
      * LaTeX are escaped or removed.
      */
-
     function cdata($text) {
         $this->doc .= $this->_latexSpecialChars($text);
     }
@@ -108,7 +133,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Function is called, when renderer finds a new paragraph.
      * It makes new paragraph in LaTeX Document.
      */
-
     function p_open() {
         $this->doc .= "\n\n";
     }
@@ -116,7 +140,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function is called, when renderer finds the end of a paragraph.
      */
-
     function p_close() {
         //there is nothing done with that in LaTeX
     }
@@ -125,7 +148,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Function is called, when renderer finds a linebreak.
      * It adds new line in LaTeX Document.
      */
-
     function linebreak() {
         $this->doc .= "\\\\";
     }
@@ -138,7 +160,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds a strong text
      * It calls command for strong text in LaTeX Document.
      */
-
     function strong_open() {
         $this->_open('textbf');
     }
@@ -146,7 +167,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of a strong text 
      */
-
     function strong_close() {
         $this->_close();
     }
@@ -155,7 +175,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds an emphasised text
      * It calls command for emphasised text in LaTeX Document.
      */
-
     function emphasis_open() {
         $this->_open('emph');
     }
@@ -163,7 +182,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of an emphasised text
      */
-
     function emphasis_close() {
         $this->_close();
     }
@@ -172,7 +190,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds an underlined text
      * It calls command for underlined text in LaTeX Document.
      */
-
     function underline_open() {
         $this->_open('underline');
     }
@@ -180,7 +197,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of an underlined text
      */
-
     function underline_close() {
         $this->_close();
     }
@@ -190,7 +206,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * (all letters have same width)
      * It calls command for monospace text in LaTeX Document.
      */
-
     function monospace_open() {
         $this->_open('texttt');
     }
@@ -199,7 +214,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds the end of a monospace text 
      * (all letters have same width)
      */
-
     function monospace_close() {
         $this->_close();
     }
@@ -208,7 +222,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds a subscript 
      * It adds needed package and calls command for subscript in LaTeX Document.
      */
-
     function subscript_open() {
         $package = new Package('fixltx2e');
         $this->_addPackage($package);
@@ -218,7 +231,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of a subscript 
      */
-
     function subscript_close() {
         $this->_close();
     }
@@ -227,7 +239,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds a superscript 
      * It adds needed package and calls command for superscript in LaTeX Document.
      */
-
     function superscript_open() {
         $package = new Package('fixltx2e');
         $this->_addPackage($package);
@@ -237,7 +248,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of a superscript 
      */
-
     function superscript_close() {
         $this->_close();
     }
@@ -246,7 +256,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds a deleted text
      * It adds needed package and calls command for deleted text in LaTeX Document.
      */
-
     function deleted_open() {
         $package = new Package('ulem');
         $package->addParameter('normalem');
@@ -257,7 +266,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of a deleted text
      */
-
     function deleted_close() {
         $this->_close();
     }
@@ -266,7 +274,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * function is called, when renderer finds a footnote
      * It calls footnote command in LaTeX Document.
      */
-
     function footnote_open() {
         $this->_open('footnote');
     }
@@ -274,7 +281,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds the end of a footnote
      */
-
     function footnote_close() {
         $this->_close();
     }
@@ -284,13 +290,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an unordered list in latex, even with right indention
      */
     function listu_open() {
-        if($this->list_opened) {
-            for($i = 1; $i < $this->last_level + 1; $i++) {
+        //FIXME possible refactor
+        if ($this->list_opened) {
+            for ($i = 1; $i < $this->last_level + 1; $i++) {
                 $this->doc .= "  ";
             }
-        }
-        else {
-            $this->list_opened=TRUE;
+        } else {
+            $this->list_opened = TRUE;
         }
         $this->_indent_list();
         $this->doc .= "\\begin{itemize}\n";
@@ -301,8 +307,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for the end of an unordered list in latex, even with right indention
      */
     function listu_close() {
-        if($this->last_level == 1) {
-            $this->list_opened=FALSE;
+        //FIXME possible refactor
+        if ($this->last_level == 1) {
+            $this->list_opened = FALSE;
         }
         $this->_indent_list();
         $this->doc .= "\\end{itemize}\n";
@@ -313,13 +320,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an ordered list in latex, even with right indention
      */
     function listo_open() {
-        if($this->list_opened) {
-            for($i = 1; $i < $this->last_level + 1; $i++) {
+        //FIXME possible refactor
+        if ($this->list_opened) {
+            for ($i = 1; $i < $this->last_level + 1; $i++) {
                 $this->doc .= "  ";
             }
-        }
-        else {
-            $this->list_opened=TRUE;
+        } else {
+            $this->list_opened = TRUE;
         }
         $this->_indent_list();
         $this->doc .= "\\begin{enumerate}\n";
@@ -330,8 +337,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for the end of an ordered list in latex, even with right indention
      */
     function listo_close() {
-        if($this->last_level == 1) {
-            $this->list_opened=FALSE;
+        //FIXME possible refactor
+        if ($this->last_level == 1) {
+            $this->list_opened = FALSE;
         }
         $this->_indent_list();
         $this->doc .= "\\end{enumerate}\n";
@@ -551,7 +559,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Syntax of almost every LaTeX command is alway the same.
      * @param $command The name of a LaTeX command.
      */
-
     private function _open($command) {
         $this->doc .= '\\' . $command . '{';
     }
@@ -560,7 +567,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Closing tag of all LaTeX commands is always same and will be called
      * in almost every _close function.
      */
-
     private function _close() {
         $this->doc .= '}';
     }
@@ -569,7 +575,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Adds name of new package to packages array, but prevents duplicates
      * @param $package LaTeX package to be used in rendering.
      */
-
     private function _addPackage($package) {
         foreach ($this->packages as $p) {
             if ($p->getName() == $package->getName()) {
@@ -582,7 +587,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Inserts all packages collected during the rendering to the head of the document.
      */
-
     private function _insertPackages() {
         foreach ($this->packages as $package) {
             $param = $this->_latexSpecialChars($package->printParameters());
@@ -590,11 +594,26 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
     }
-    
+
+    /**
+     * Indents the list given the last seen level.
+     */
     private function _indent_list() {
-        for($i = 1; $i < $this->last_level; $i++) {
+        for ($i = 1; $i < $this->last_level; $i++) {
             $this->doc .= '  ';
         }
+    }
+
+    /**
+     * Insert header to the LaTeX document with right level command.
+     * @param type $level LaTeX command for header on right level.
+     * @param type $text Text of the Header.
+     */
+    private function _header($level, $text) {
+        $this->_open($level);
+        $this->doc .= $this->_latexSpecialChars($text);
+        $this->_close();
+        $this->doc .= "\n";
     }
 
     private function _latexSpecialChars($text) {

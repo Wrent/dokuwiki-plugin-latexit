@@ -4,13 +4,9 @@
 \begin{document}
 
 \section{Nadpis 1}
-
 \subsection{Nadpis 2}
-
 \subsubsection{Nadpis 3}
-
 \paragraph{Nadpis 4}
-
 \subparagraph{Nadpis 5}
 
 \end{document}
