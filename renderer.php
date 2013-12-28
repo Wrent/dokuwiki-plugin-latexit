@@ -472,9 +472,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-    // $link is full URL with scheme, $title could be an array (media)
+    /**
+     * function is called, when renderer finds an external link
+     * It calls proper function in LaTeX depending on the title
+     * @param type $link External link
+     * @param type $title Title, can be null or array (if it is media)
+     */
     function externallink($link, $title = NULL) {
-        
+        $package = new Package('hyperref');
+        $this->_addPackage($package);
+        //FIXME pictures
+        if(is_null($title)) {
+            $this->doc .= '\\url{'.$link.'}';
+        } else {
+            $this->doc .= '\\href{'.$link.'}{'.$title.'}';
+        }
     }
 
     function rss($url, $params) {
@@ -498,9 +510,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-//  function email($address, $title = NULL) {}
+    /**
+     * function is called, when renderer finds an email link
+     * It calls proper function in LaTeX depending on the name and sets mailto
+     * @param type $address Email address
+     * @param type $name Name, can be null or array (if it is media)
+     */
     function emaillink($address, $name = NULL) {
-        
+        $package = new Package('hyperref');
+        $this->_addPackage($package);
+        //FIXME pictures
+        if(is_null($name)) {
+            $this->doc .= '\\href{mailto:'.$address.'}{'.$address.'}';
+        } else {
+            $this->doc .= '\\href{mailto:'.$address.'}{'.$name.'}';
+        }
     }
 
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
