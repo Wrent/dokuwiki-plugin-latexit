@@ -4,21 +4,27 @@
 \begin{document}
 
 \begin{itemize}
- \item Seznam položka 1
- \item Seznam položka 2
- \begin{itemize}
-  \item Vnořená položka 1
- \end{itemize}
- \item Seznam položka 3
+  \item Seznam položka 1
+  \item Seznam položka 2
+  \begin{itemize}
+    \item Vnořená položka 1
+    \begin{itemize}
+      \item Vnořená položka 2
+    \end{itemize}
+  \end{itemize}
+  \item Seznam položka 3
 \end{itemize}
 
 \begin{enumerate}
- \item Seznam položka 1
- \item Seznam položka 2
- \begin{enumerate}
-  \item Vnořená položka 1
- \end{enumerate}
- \item Seznam položka 3
+  \item řazený Seznam položka 1
+  \item řazený Seznam položka 2
+  \begin{enumerate}
+    \item řazený Vnořená položka 1
+    \begin{enumerate}
+      \item řazený Vnořená položka 2
+    \end{enumerate}
+  \end{enumerate}
+  \item řazený Seznam položka 3
 \end{enumerate}
 
 

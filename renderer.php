@@ -13,9 +13,11 @@ if (!defined('DOKU_INC'))
 require_once DOKU_INC . 'inc/parser/xhtml.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 
-class renderer_plugin_latexit extends Doku_Renderer_xhtml {
+class renderer_plugin_latexit extends Doku_Renderer {
 
     private $packages;
+    private $last_level;
+    private $list_opened;
 
     /**
      * Make available as LaTeX renderer
@@ -41,6 +43,7 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
     function document_start() {
         //initialize variables
         $this->packages = array();
+        $this->list_opened = FALSE;
         //this is default LaTeX header right now, can be changed in configuration
         $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
                 . "\\usepackage[utf8]{inputenc}\n"
@@ -276,36 +279,94 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
         $this->_close();
     }
 
+    /**
+     * function is called, when renderer finds start of an unordered list
+     * It calls command for an unordered list in latex, even with right indention
+     */
     function listu_open() {
-        
+        if($this->list_opened) {
+            for($i = 1; $i < $this->last_level + 1; $i++) {
+                $this->doc .= "  ";
+            }
+        }
+        else {
+            $this->list_opened=TRUE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\begin{itemize}\n";
     }
 
+    /**
+     * function is called, when renderer finds the end of an unordered list
+     * It calls command for the end of an unordered list in latex, even with right indention
+     */
     function listu_close() {
-        
+        if($this->last_level == 1) {
+            $this->list_opened=FALSE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\end{itemize}\n";
     }
 
+    /**
+     * function is called, when renderer finds start of an ordered list
+     * It calls command for an ordered list in latex, even with right indention
+     */
     function listo_open() {
-        
+        if($this->list_opened) {
+            for($i = 1; $i < $this->last_level + 1; $i++) {
+                $this->doc .= "  ";
+            }
+        }
+        else {
+            $this->list_opened=TRUE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\begin{enumerate}\n";
     }
 
+    /**
+     * function is called, when renderer finds the end of an ordered list
+     * It calls command for the end of an ordered list in latex, even with right indention
+     */
     function listo_close() {
-        
+        if($this->last_level == 1) {
+            $this->list_opened=FALSE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\end{enumerate}\n";
     }
 
+    /**
+     * function is called, when renderer finds start of a list item
+     * It calls command for a list item in latex, even with right indention
+     */
     function listitem_open($level) {
-        
+        $this->last_level = $level;
+        $this->_indent_list();
+        $this->doc .= "  \\item";
     }
 
+    /**
+     * function is called, when renderer finds the end of a list item
+     */
     function listitem_close() {
-        
+        //does nothing in latex
     }
 
+    /**
+     * function is called, when renderer finds start of a list item content
+     */
     function listcontent_open() {
-        
+        //does nothing in latex
     }
 
+    /**
+     * function is called, when renderer finds the end of a list item content
+     * It adds newline to the latex file.
+     */
     function listcontent_close() {
-        
+        $this->doc .= "\n";
     }
 
     function unformatted($text) {
@@ -528,6 +589,12 @@ class renderer_plugin_latexit extends Doku_Renderer_xhtml {
             $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
         }
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
+    }
+    
+    private function _indent_list() {
+        for($i = 1; $i < $this->last_level; $i++) {
+            $this->doc .= '  ';
+        }
     }
 
     private function _latexSpecialChars($text) {

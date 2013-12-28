@@ -2,8 +2,8 @@ This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdf
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**test3.latex
-(./test3.latex
+**test3_exported.latex
+(./test3_exported.latex
 LaTeX2e <2011/06/27>
 Babel <3.9f> and hyphenation patterns for 4 languages loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
@@ -254,8 +254,9 @@ File: babel.def 2013/05/16 v3.9f Babel common definitions
 Package babel Info: Making " an active character on input line 172.
 \cs@wordlen=\count88
 Package babel Info: Making - an active character on input line 226.
-)) (./test3.aux)
-\openout1 = `test3.aux'.
+))
+(./test3_exported.aux)
+\openout1 = `test3_exported.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
@@ -269,29 +270,28 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 7.
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 9.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 7.
- [1
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 9.
+[1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./test3.aux) ) 
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./test3_exported.aux) ) 
 Here is how much of TeX's memory you used:
  918 strings out of 494997
- 10282 string characters out of 6180233
+ 10363 string characters out of 6180233
  65226 words of memory out of 5000000
  4181 multiletter control sequences out of 15000+600000
  4505 words of font info for 17 fonts, out of 8000000 for 9000
  24 hyphenation exceptions out of 8191
- 23i,4n,23p,169b,211s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share
-/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texli
-ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on test3.pdf (1 page, 29069 bytes).
+ 23i,4n,23p,178b,213s stack positions out of 5000i,500n,10000p,200000b,80000s
+</
+usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/sh
+are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
+Output written on test3_exported.pdf (1 page, 29069 bytes).
 PDF statistics:
  20 PDF objects out of 1000 (max. 8388607)
  13 compressed objects within 1 object stream
