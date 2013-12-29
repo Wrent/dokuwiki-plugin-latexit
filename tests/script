@@ -1,13 +1,16 @@
 #! /bin/bash
 echo '' > log
-for ((i = 1; i <= $1; i++)); do
+for ((i = $1; i <= $2; i++)); do
    URL=http://localhost/_bp/doku.php?id=test:test
    URL=$URL${i}
    URL=$URL"&do=export_latexit"
    wget -O exported/test${i}_exported.latex $URL
 done
-for ((i = 1; i <= $1; i++)); do
+for ((i = $1; i <= $2; i++)); do
    diff -bB exported/test${i}_exported.latex my/test${i}.latex >> log
    echo '--------------KONEC '$i'------------' >> log
 done
+if [ $3 = 1 ]; then
+   wget -O exported/projekt_exported.latex 'http://localhost/_bp/doku.php?id=projects:industry:profinit:dokument_tacr_jazyk&do=export_latexit'
+fi
 cat log

@@ -1,0 +1,29 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage[normalem]{ulem}
+\begin{document}
+
+\section{Kořenový dokument}
+
+
+Text kořenového dokumentu.
+
+\subsection{Vnořený dokument}
+
+
+Text vnořeného dokumentu.
+
+\subsubsection{Vnořený dokument 2}
+
+
+Text vnořeného dokumentu 2
+
+\sout{deleted}
+
+
+
+Text kořenového dokumentu.
+
+
+\end{document}

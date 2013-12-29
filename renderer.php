@@ -12,12 +12,16 @@ if (!defined('DOKU_INC'))
 
 require_once DOKU_INC . 'inc/parser/xhtml.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
+require_once DOKU_INC . 'inc/parserutils.php';
+require_once DOKU_INC . 'inc/pageutils.php';
 
 class renderer_plugin_latexit extends Doku_Renderer {
 
     private $packages;
     private $last_level;
     private $list_opened;
+    private $recursion_level;
+    private $headers_level;
 
     /**
      * Make available as LaTeX renderer
@@ -42,18 +46,39 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function document_start() {
         //initialize variables
+        global $latexit_level;
+        global $latexit_headers;
+       
+        
         $this->packages = array();
         $this->list_opened = FALSE;
-        //this is default LaTeX header right now, can be changed in configuration
-        $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
-                . "\\usepackage[utf8]{inputenc}\n"
-                . "\\usepackage[czech]{babel}\n";
-        $packages = '~~~PACKAGES~~~';
-        $document_start = "\\begin{document}\n"
-                . "\n";
-        //FIXME if conf
-        $header = $header_default;
-        $this->doc .= $header . $packages . $document_start;
+        if (!isset($latexit_level) || is_null($latexit_level)) {
+            $this->recursion_level = 0;
+        } else {
+            $this->recursion_level = $latexit_level;
+        }
+        if (!isset($latexit_headers) || is_null($latexit_headers)) {
+            $this->headers_level = 0;
+        } else {
+            $this->headers_level = $latexit_headers;
+        }
+
+        if (!$this->_immersed()) {
+            //this is default LaTeX header right now, can be changed in configuration
+            $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
+                    . "\\usepackage[utf8]{inputenc}\n"
+                    . "\\usepackage[czech]{babel}\n";
+            $packages = '~~~PACKAGES~~~';
+            $document_start = "\\begin{document}";
+            //FIXME if conf
+            $header = $header_default;
+            $this->doc .= $header . $packages . $document_start;
+            $this->doc .= "\n\n";
+        } else {
+            $this->doc .= '~~~PACKAGES-START~~~';
+            $this->doc .= '~~~PACKAGES~~~';
+            $this->doc .= '~~~PACKAGES-END~~~';
+        }
 
         //set the headers, so the browsers knows, this is not the HTML file
         header('Content-Type: application/x-latex');
@@ -65,11 +90,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It finalizes the document.
      */
     function document_end() {
-        $footer_default = "\n\n"
-                . "\\end{document}\n";
+        if (!$this->_immersed()) {
+            $this->doc .= "\n\n";
+            $footer_default = "\\end{document}\n";
 
-        $this->doc .= $footer_default;
-
+            $this->doc .= $footer_default;
+        }
         //insert all packages collected during rendering
         $this->_insertPackages();
     }
@@ -90,6 +116,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $pos ???
      */
     function header($text, $level, $pos) {
+        if($this->_immersed()) {
+            $level += $this->headers_level;
+        }
+        $this->headers_level = $level;
         switch ($level) {
             case 1:
                 $this->_header('section', $text);
@@ -107,7 +137,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_header('subparagraph', $text);
                 break;
             default:
+                $this->doc .= "\n\n";
+                $this->_open('textbf');
                 $this->doc .= $this->_latexSpecialChars($text);
+                $this->_close();
                 break;
         }
     }
@@ -467,27 +500,27 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-   
     /**
      * function is called, when renderer finds an internal link
      * It resolves the internal link (namespaces, URL)
      * Depending on the configuration:
-     *     It calls proper function in LaTeX depending on the title
+     *     It handles link as an external and calls proper function in LaTeX depending on the title
      * @param type $link Internal link (can be without proper namespace)
      * @param type $title Title, can be null or array (if it is media)
      */
     function internallink($link, $title = NULL) {
         global $ID; //in this global var DokuWiki stores the current page id with namespaces
+        global $latexit_level;
+        global $latexit_headers;
         
+        $recursive = true;
+
+
         $link = $this->_latexSpecialChars($link);
         $title = $this->_latexSpecialChars($title);
-        $package = new Package('hyperref');
-        $this->_addPackage($package);
-        
+
         $link_original = $link;
-        
-        //FIXME configurable
-        //handle internal links as they were external
+
         $current_namespace = getNS($ID); //get current namespace from current page
         resolve_pageid($current_namespace, $link, $exists); //get the page ID with right namespaces
         //$exists stores information, if the page exists. We don't care about that right now. FIXME?
@@ -495,12 +528,23 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $absoluteURL = true;
         $url = wl($link, $params, $absoluteURL); //get the whole URL
         //FIXME keep hash in the end? have to test!
-        
-        //FIXME title pictures
-        if(is_null($title)) {
-            $this->doc .= '\\href{'.$url.'}{'.$link_original.'}';
+        //FIXME configurable
+        if ($recursive) {
+            $latexit_level = $this->recursion_level + 1;
+            $latexit_headers = $this->headers_level;
+            $data = p_cached_output(wikifn($link), 'latexit');
+            $data = $this->_loadPackages($data);
+            $this->doc .= $data;
         } else {
-            $this->doc .= '\\href{'.$url.'}{'.$title.'}';
+            //handle internal links as they were external
+            $package = new Package('hyperref');
+            $this->_addPackage($package);
+            //FIXME title pictures
+            if (is_null($title)) {
+                $this->doc .= '\\href{' . $url . '}{' . $link_original . '}';
+            } else {
+                $this->doc .= '\\href{' . $url . '}{' . $title . '}';
+            }
         }
     }
 
@@ -516,10 +560,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package = new Package('hyperref');
         $this->_addPackage($package);
         //FIXME pictures
-        if(is_null($title)) {
-            $this->doc .= '\\url{'.$link.'}';
+        if (is_null($title)) {
+            $this->doc .= '\\url{' . $link . '}';
         } else {
-            $this->doc .= '\\href{'.$link.'}{'.$title.'}';
+            $this->doc .= '\\href{' . $link . '}{' . $title . '}';
         }
     }
 
@@ -556,10 +600,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package = new Package('hyperref');
         $this->_addPackage($package);
         //FIXME pictures
-        if(is_null($name)) {
-            $this->doc .= '\\href{mailto:'.$address.'}{'.$address.'}';
+        if (is_null($name)) {
+            $this->doc .= '\\href{mailto:' . $address . '}{' . $address . '}';
         } else {
-            $this->doc .= '\\href{mailto:'.$address.'}{'.$name.'}';
+            $this->doc .= '\\href{mailto:' . $address . '}{' . $name . '}';
         }
     }
 
@@ -648,11 +692,28 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Inserts all packages collected during the rendering to the head of the document.
      */
     private function _insertPackages() {
-        foreach ($this->packages as $package) {
-            $param = $this->_latexSpecialChars($package->printParameters());
-            $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
+        if ($this->_immersed()) {
+            $packages = serialize($this->packages);
+        } else {
+            foreach ($this->packages as $package) {
+                $param = $this->_latexSpecialChars($package->printParameters());
+                $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
+            }
         }
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
+    }
+
+    private function _loadPackages($data) {
+        preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
+        $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
+
+        $packages = unserialize($pckg[1]);
+        if (!is_null($packages)) {
+            foreach ($packages as $package) {
+                $this->_addPackage($package);
+            }
+        }
+        return $data;
     }
 
     /**
@@ -674,6 +735,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= $this->_latexSpecialChars($text);
         $this->_close();
         $this->doc .= "\n";
+    }
+
+    /**
+     * This function finds out, if the current renderer is immersed in recursion.
+     * @return boolean Is immersed in recursion?
+     */
+    private function _immersed() {
+        if ($this->recursion_level > 0) {
+            return true;
+        }
+        return false;
     }
 
     private function _latexSpecialChars($text) {

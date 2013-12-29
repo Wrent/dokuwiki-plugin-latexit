@@ -1,0 +1,907 @@
+<br />
+<b>Warning</b>:  Invalid argument supplied for foreach() in <b>/media/Data/web/www/_bp/lib/plugins/latexit/renderer.php</b> on line <b>712</b><br />
+<br />
+<b>Warning</b>:  Invalid argument supplied for foreach() in <b>/media/Data/web/www/_bp/lib/plugins/latexit/renderer.php</b> on line <b>712</b><br />
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{hyperref}
+\begin{document}
+
+
+
+\section{Struktura dokumentu}
+
+
+Tento dokument obsahuje analýzy a rešerše provedené v rámci projektu „Nástroj pro syntaktickou a sémantickou analýzu SQL skriptů“ (dále jen projekt) pro výběr jazyka sloužícího k zadávání pravidel podnikových metodik (dále jen jazyk).   \section{Úvod}
+ Tady prosím o revizi a zpřesnění a doplnění.    \emph{\href{mailto:robert.pergl@fit.cvut.cz}{Robert Pergl} 2013/07/05 12:27}
+
+Informatica a Terradata provozují systémy pro své klienty, kde je důležitou součástí kontrola pravidel, která musí být uvnitř systémů splněna. Jedná o různé typy systémů nad databázovými technologiemi, v současnosti tyto:\begin{itemize}
+  \item Informatica PowerCenter (IFPC) workflow
+  \item Terradata BTEQ a SQL scripty
+\end{itemize}
+
+
+Jelikož se jedná o různé typy systémů a technologií, byla v rámci projektu Manta vytvořena jednotná datová struktura SqlAstTreeNode. Jedná se o stromovou strukturu (\href{http://en.wikipedia.org/wiki/Abstract_syntax_tree}{Abstract Syntax Tree}, AST) s určitými přidavnými informacemi. Do této struktury jsou transformovány vstupní databázové skripty (v případě technologie Terradaty) a popis technologicky specifických struktur (popis workflow IFPC).
+
+\texttt{SqlAstTreeNode} má podobu XML dokumentu. Obsahuje abstraktní popis datových struktur, nad kterými je třeba provádět kontroly pravidel. 
+
+V současnosti je provádění kontroly pravidel implementováno v jazyce Java. Pro vyhledávání ve stromě je používán jazyk \emph{XPath} a pro specifikaci požadovaných hodnot \emph{regulární výrazy}. Pro editaci pravidel a spouštění jejich kontrol je implementována webová aplikace na bázi \emph{JSP}. Tvorba pravidel vychází z předdefinovaných šablon typů, ve kterých jsou nastaveny požadované parametry. Detaily jednotlivých typů pravidel uvádí dokument .
+
+Z hlediska uživatelských rolí v projektu Manta existují:\begin{itemize}
+  \item Programátoři (Profinit): implementace webové aplikace, implementace šablon typů pravidel.
+  \item Programátoři klienta (nyní Informatica, Terradata): implementace pravidel formou vytváření instancí šablon a jejich plnění požadovanými parametry kontrol.
+\end{itemize}
+
+
+Nevýhodou současné implementace je nutnost manuálního programování každého typu pravidla programátory Profinitu. Toto je nutné pro každý typ pravidla s tím, že některé typy pravidel jsou specifické pro určitého klienta.
+
+[TF](doplnit detaily)\section{Cíle projektu}
+ Zde by se rozepsalo, co je v zadávací dokumentaci, aby to bylo přehledně a jasně napsáno na začátku každé výstupní zprávy.   \emph{\href{mailto:robert.pergl@fit.cvut.cz}{Robert Pergl} 2013/09/27 12:43}
+
+Cílem projektu je navrhnout a implementovat univerzální systém pro vytváření pravidel tak, aby nové typy pravidel (šablony) byli schopni implementovat přímo programátoři klienta uživatelským způsobem, bez doprogramovávání jádra systému.\subsection{Požadavky na navržený systém}
+
+
+Na navržený systém jsou kladeny tyto základní požadavky:\begin{itemize}
+  \item Nutnost abstrakce vzhledem k různým typům vstupu a dialektům
+  \item Vzhledem k operacím nad stromovými strukuturami požadujeme:
+  \begin{itemize}
+    \item Vyhledávat ve stromě na základě podstromu konkrétního uzlu, linie jeho předků, sourozenců nebo atributů
+    \item Ověřit že uzel odpovídá podmínce
+    \item Kromě vyhledávání je potřeba umožnit i transformace
+  \end{itemize}
+  \end{itemize}
+
+
+U programátorů klienta lze obecně očekávat různou úroveň programátorských dovedností. Mezi programátory klienta počítáme též specialisty na oblast business intelligence, kteří mají technické myšlení, často však nejsou zvyklí psát složitější programový kód. Z tohoto důvodu bude třeba systém koncipovat v několika úrovních tak, aby každý typ uživatele mohl se systémem pracovat způsobem, který je blízký jeho uvažování:      \begin{enumerate}
+  \item \textbf{Úroveň syntaxe}: na této úrovni bude možné zapisovat šablony a pravidla pomocí doménově-specifického jazyka vysoké úrovně. Tato úroveň je vhodná pro uživatele (programátory), kteří jsou zvyklí budovat specifikace textově.
+  \item \textbf{Grafický editor}: pro uživatele, kteří jsou zvyklí budovat specifikace grafickým způsobem (drag & drop).
+\end{enumerate}
+
+
+Celý systém by měl být cílově plně \emph{dvoucestný}, tj. mělo by být možné kombinovat libovolným způsobem práci na úrovni syntaxe a grafického editoru. 
+
+Na systém klademe dále tyto obecné požadavky:\begin{itemize}
+  \item \textbf{Flexibilita úprav a rozšiřování}  Požadavky zákazníka se vyvíjí a mění. Pro snižování nákladů s tím souvisejících je třeba, aby úpravy a rozšiřování hotových řešení byly co nejméně pracné.
+  \item \textbf{Znovupoužitelnost}  Klienti mají často podobné potřeby a menší či větší kusy již hotových řešení je možné použít opakovaně. Systém by měl tento přístup podporovat. Tento požadavek též souvisí s předchozím, jelikož znovupoužité části systému musí být dostatečně flexibilní, aby je bylo možné upravovat.
+\end{itemize}
+\subsection{Cíle prvního roku řešení}
+
+
+V prvním roce rešení byly realizovány následující cíle:\section{Metodika řešení}
+\subsection{Celkový koncept řešení}
+
+
+[RP+TF](sepsat)\subsection{Rok 2013}
+\begin{enumerate}
+  \item Analýza problémové domény  ontologická analýza problematiky
+  \item Rešerše a analýza vhodných formálních základů
+  \item Rešerše a analýza vhodných technologií
+  \item Formulace vysokoúrovňového doménově-specifického jazyka
+  \begin{itemize}
+    \item Jazyk pro vyhledávání ve stromě
+    \item Jazyk pro ověřování podmínek
+    \item Jazyk pro formulace úprav stromu
+  \end{itemize}
+  \item Vytvoření algoritmů pro vyhodnocování pravidel
+\end{enumerate}
+\subsection{Další roky řešení}
+\begin{enumerate}
+  \item Vytvoření syntaxe jazyka
+  \item Implementace parseru a  testování jazyka na příkladech.
+  \item \subsubsection{Grafický jazyk}
+\begin{itemize}
+  \item Balík grafických prototypů k dokumentu  pro nástroj \href{http://www.yworks.com/en/products_yed_about.html}{yEd}
+  \begin{itemize}
+    \item 
+  \end{itemize}
+  \end{itemize}
+  
+  \item Analýza, návrh a implementace integrovaného dvoucestného systému.
+  \item \subsubsection{Formát výstupu}
+
+
+V rámci prototypu bude výstup ve formátu XML odpovídající stejnému schématu jako současná podoba reportů v Manta Checker pro IFPC.\begin{itemize}
+  \item 
+  \item 
+  \item 
+\end{itemize}
+
+\end{enumerate}
+\section{\textbf{\textbf{Analýza Teradata}
+
+[TF](naformulovat)
+
+Ve validacích nad SQL stromem Teradaty se kromě klasického průchodu stromem používají tři věci\begin{itemize}
+  \item Union (a|b)
+  \item Podmínka na podstrom vybíraného uzlu (a[b])
+  \item Možnost použít negaci (a[not b])
+\end{itemize}
+
+
+Jako obecné transformace máme navržené\begin{itemize}
+  \item Přidání uzlu
+  \item Odebrání uzlu
+  \item Změna textace uzlu
+  \item Přidání komentáře
+  \item Smazání bílých znaků nebo komentáře
+  \item 
+\end{itemize}
+
+
+Mezi složitější pravidla, které se budou muset nejspíš drátovat pak patří\begin{itemize}
+  \item Náhrada číselných odkazů v ORDER BY a GROUP BY za názvy odkazovaných sloupců
+  \item Doplnění objektům plné kvalifikace
+  \item Přejmenování objektu a propagace této změny do zbytku skriptu
+  \item Sjednocení psaní DB objektů vůči datovému slovníku
+  \item Přejmenování aliasů na standard zákazníka
+  \item Nahrazení insertu do konkrétní tabulky voláním makra
+  \item Přidání explain příkazu před všechny SQL statementy s braním v potaz transakčních příkazů v BTEQu
+  \item Vložení makra na konkrétní místo se zajištěním, aby bylo přítomno ve skriptu právě jednou
+\end{itemize}}
+
+\textbf{Strukturální analýza}
+
+Z doménových analýz vyplývá, že je třeba operovat nad poměrně různými stromovými strukturami. Vzhledem k potřebě obecnosti řešení i pro budoucí klienty s rozdílnými doménami se tedy musíme omezit na stromové struktury v jejich nejobecnější podobě. Můžeme tedy definovat následující základní ontologické pojmy (prvky):\begin{itemize}
+  \item \textbf{strom} (tree)  graf bez cyklů. Graf definujeme v souladu s . Strom je rekurzivní struktura, tudíž každý uzel stromu definuje vlastní strom, který nazýváme \textbf{podstrom}.
+  \item \textbf{uzel stromu} (node); definujeme speciální uzel (konstanta): \textbf{kořen} (root)
+  \item \textbf{označení uzlu} (node tag)
+  \item \textbf{obsah uzlu stromu} (node contents),
+  \item \textbf{atribut uzlu stromu} (node attribute),
+  \item \textbf{klíč atributu} (attribute key)
+  \item \textbf{hodnota atributu} (attribute value).
+\end{itemize}
+
+
+Základní množiny v doméně řešení tedy budou:\begin{itemize}
+  \item Množina všech uzlů stromu: 
+\end{itemize}
+
+
+Odvozené množiny poté jsou:\begin{itemize}
+  \item Množina všech označení uzlů: 
+  \item Množina všech obsahů uzlů: 
+  \item Množina všech atributů: 
+  \item Množina všech klíčů atributů: 
+  \item Množina všech hodnot atributů: 
+\end{itemize}
+
+
+\textbf{Behaviorální analýza}
+
+Z hlediska klíčových funkcí, chování a operací v doméně rozeznáváme tyto pojmy:\begin{itemize}
+  \item vytvoření datového elementu (create)
+  \item změna hodnoty datového elementu (update)
+  \item odstranění datového elementu (delete)
+  \item vyhledání datového elementu ve stromě (search)
+  \item transformace datového elementu (transform)
+  \item ověření podmínky (check)
+\end{itemize}}
+\section{\textbf{\textbf{Programování pomocí datových toků}
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) [RP](cite) , nebo-li \textbf{dataflow programming} je paradigma, které modeluje program jakožto \emph{orientovaný graf} . Tento přístup je rozvíjen od 70.let 20.stol a je základem většiny \emph{vizuálních programovacích jazyků}. Pro nás je zajímavý jednak z hlediska možnosti vizuálně (a tedy názorně) reprezentovat program a též z důvodu dalších zajímavých vlastností.
+
+Koncept DFP vychází z Dataflow diagramů [RP](cite), které slouží jako druh analytického modelu. Základním stavebním prvkem je uzel orientovaného grafu nazývaný \textbf{blok}, který má \textbf{vstupní porty} a \textbf{výstupní porty}. Takovýto blok může být\begin{itemize}
+  \item \textbf{zdroj} (source)  pouze generuje data do sítě, nemá vstupní porty,
+  \item \textbf{stok} (sink)  datové toky v něm končí, nemá výstupní porty,
+  \item \textbf{pracovní blok} (processing block)  má vstupní i výstupní porty a provádí transformaci vstupů na výstupy.
+\end{itemize}
+
+
+Blok též může abstrahovat \emph{podgraf}, čímž získáváme \textbf{dekompozici}. Bloky jsou spojeny \textbf{orientovanými hranami}, které definují tok informací mezi bloky. \textbf{Data flow program} je poté tvořen jedním či více zdroji, určitým počtem pracovních bloků a jedním či více stoků.
+
+Výpočetní model funguje tak, že blok se vykoná, jakmile má k dispozici vstupní data. Bloky pracují nezávisle na sobě, \emph{bez vedlejších efektů}\footnote{toto je rys podobný funkcionálnímu paradigma [RP](ref) }. Tím odpadá nebezpečí \emph{deadlocks}, jelikož v systému nejsou žádné globální datové závislosti. 
+
+Prvním praktickým využitím DFP byl projekt SKETCHPAD, který představoval vizuální programovací jazyk na počítačí TX-2 [RP](cite) Sutherland, W.: On-Line Graphical Specification of Computer Procedures. (1966). Ukázka programu je na \ref{fig:dfp}.
+
+\begin{figure}[H!]{\centering\caption{Ukázka jednoduchého DFP}\label{fig:dfp}\end{figure}
+
+Ze současných DFP systémů můžeme jmenovat např. systém Informatica [TF](cite) či Quartz Composer, který je součástí vývojového prostředí XCode firmy Apple (\ref{fig:quartz}).
+
+\begin{figure}[H!]{\centering\caption{Ukázka DFP v editoru Quartz Composer}\label{fig:quartz}\end{figure}
+
+DFP ale nemusí být vždy nutně vizualizací grafu (ačkoliv většina vizuálních programovacích jazyků tuto podobu má). Existují i textové DFP a do této kategorie můžeme zařadit i běžný tabulkový kalkulátor (spreadsheet), např. Microsoft Excel: v kalkulátoru každá buňka reprezentuje buď hodnotu nebo výraz. Buňky mohou mít vazby závislosti na ostatní buňky. Výpočet probíhá dle data flow modelu: jakmile se buňka zaktualizuje, mohou se zaktualizovat buňky, které na ní závisí. Tento model bývá někdy specificky označován jako buňkově-orientované DFP (cell-oriented DFP) či reaktivní programování (Reactive programming).
+
+Do DFP paradigma spadá i \textbf{aktorový model}. Jedná se o model konkurentního běhu zavedený Carlem Hewittem z MIT v 70.letech 20.stol. Cílem výzkumu bylo vyvinout jednodušší způsoby paralelizace výpočtu. \textbf{Aktor} (actor) je agent, který přijímá a posílá zprávy, nezávisle na ostatních aktorech v systému. Při přijetí zprávy může aktor nastartovat nového aktora, provést výpočet nebo odpovědět zprávami jiným existujícím aktorům. V DF paradigma je aktor ekvivalentní uzlu a zprávy jsou ekvivalentní spojením mezi uzly. Aktorový model je prakticky využíván např. společností Twitter pro škálování výpočtu [RP](cite) Mok, W.: How twitter is scaling (June 2009), \url{https://waimingmok.wordpress}. com/2009/06/27/how-twitter-is-scaling/. 
+
+Jak je vidět, DFP představuje určité \emph{zastřešující paradigma} výpočtu, v rámci kterého můžeme aplikovat různá další paradigmata. Pro vizuální programovací jazyky je nejběžnější kombinace s \emph{imperativním paradigma}. Příklad while-bloku v systému VIPERS je na  \ref{fig:vipers}.
+
+\begin{figure}[H!]{\centering\caption{While-blok v systému VIPERS}\label{fig:vipers}\end{figure}}
+
+\textbf{Analýza jednotlivých paradigmat}
+
+V předcházejících kapitolách jsme si představili základní paradigmata tvorby software. Můžeme tedy nyní přistoupit k vyhodnocení vlastností jednotlivých paradigmat pro řešení zadání projektu. V tomto místě se bude jednat zatím o vyhodnocení na základě teoretických předpokladů jednotlivých paradigmat. Dále bude hrát podstatnou roli též vyhodnocení technologií realizujících daná paradigmata.
+
+\textbf{Funkcionální paradigma}
+
+Obecný lambda-kalkul představený ve [RP](ref) je zajímavý teoretický koncept, nicméně pro naše účely není příliš názorný. Ke stejnému názoru dospěla i většina autorů funkcionálních programovacích jazyků, jelikož se drží běžného typového systému (viz [RP](ref)).
+
+Funkce jakožto first-class objekt se však již zcela určitě prosadila do praxe a a budeme ji dále vést v patrnosti. 
+
+-konverze, -redukce a -konverze představují z našeho hlediska spíše implementační problematiku a nebudeme se tedy jimi dále zabývat. 
+
+Skládání funkcí, rekurze a další představené abstrakce mohou představovat užitečné stavební bloky pro naše účely a též je povedeme v patrnosti. Ve skládání a znovupoužívání abstrakcí spočívá základní \emph{modularita} funkcionálního programu. Tato modularita je na mnohem nižší úrovni granularity než modularita imperativního programu, čímž získáváme i vyšší flexibilitu a znovupoužitelnost, což jsou naše cíle.
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) vidíme jako \textbf{fundamentální paradigma} pro naše potřeby, a to z několika důvodů:\begin{itemize}
+  \item Paradigma je jednoduché na pochopení: pracuje pouze s pojmy \emph{blok} a \emph{datový tok}.
+  \item Vizuální reprezentace programu podporuje použití pro ne-programátorsky orientované uživatele.
+  \item Každý blok pracuje ze své podstaty \emph{bez vedlejších efektů}.
+  \item Program v DFP je přirozeně paralelizovaný, což umožňuje velmi efektivní zpracování na moderních vícejádrových procesorech, a to bez nutnosti jakýchkoliv speciálních úprav či konceptů.
+  \item Paradigma poskytuje intuitivní \emph{dekompozici} programů
+\end{itemize}
+
+
+Jedná se navíc o osvědčený přístup, např. transformace v systém Informatica jsou též reprezentovány pomocí DFP.
+
+\textbf{Závěr}
+
+Jakožto vhodné paradigma pro potřeby vyhledávání a transformace ve stromu vidíme \textbf{kombinaci funcionálního paradigma a programování pomocí datových toků} (DFP). Jak bylo vysvětleno v sekci o DFP, jedná se o zastřešující paradigma, které umožňuje vizuální přístup k programování. 
+
+K vyhodnocování pravidel považujeme za vhodný aparát \textbf{predikátovou logiku}. O logickém programování by bylo možné uvažovat i pro vyhledávání a transformace prováděné ve stromě. Výhodou logického programování je jeho vysoká expresivita a srozumitelnost. Zde je však třeba opatrnosti, jelikož ve složitějších situacích se logické paradigma v praxi dostává do problémů, jak bylo vysvětleno v příslušné kapitole.}
+\section{\subsection{Rešerše a analýza vhodných technologií}
+\paragraph{Úvod}
+
+
+V této kapitole se zaměříme na rešerší a analýzu technologií, které realizují jedno či více základních paradigmat představených v předchozí kapitole. V současnosti je k dispozici velká spousta technologií, není možné v této rešerši zaměřit na všechny, ani na většinu. Místo toho si stanovíme určitá kritéria, která budeme klást na kandidáty na technologie a bližší analýze podrobíme pouze ty, které vyhoví našim kritériím. 
+
+\textbf{Kritéria pro vyhodnocování}
+
+\textbf{Paradigma}
+
+[RP+TF](zde upravit dle potřeby zahrnout Javu do analýzy)
+
+\textbf{Zralost}
+
+Vzhledem k průmyslově-orientovanému zaměření projektu se budeme věnovat pouze technologiím, které jsou průmyslově zralé. Tím je myšleno, že jsou již úspěšně používány v průmyslové praxi a existují komerčně úspěšné projekty, kde byly použity.  
+
+\textbf{Podpora/komunita}
+
+Vzhledem k požadované flexibilitě řešení bude třeba v rámci úprav řešit i různé speciální situace. Technologie musí disponovat dobrou dokumentací a podporou buď ze strany zastřešující firmy, či musí minimálně disponovat aktivní a přiměřeně velkou komunitou.
+
+\textbf{Dostupnost hotových řešení a knihoven}
+
+Opět vzhledem k požadované flexibilitě a též celkové očekávané náročnosti projektu je třeba, aby řešení bylo založeno hotových, osvědčených knihovnách a případně i kusech řešení.
+
+\textbf{Použitelnost}
+
+Výborné parametry samotné technologie musí být podpořeny dobrou uživatelskou použitelností. Zde se jedná především o pokročilé vývojové nástroje, ladicí a kontrolní mechanismy a vizualizační možnosti.
+
+\textbf{Licence}
+
+Budeme se zaměřovat primárně na technologie, jejichž licence jsou bez poplatků.
+
+\textbf{Objektově-orientované jazyky}
+
+Jak bylo vysvětleno v kapitole 
+
+\textbf{\textbf{Programování pomocí datových toků}
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) [RP](cite) , nebo-li \textbf{dataflow programming} je paradigma, které modeluje program jakožto \emph{orientovaný graf} . Tento přístup je rozvíjen od 70.let 20.stol a je základem většiny \emph{vizuálních programovacích jazyků}. Pro nás je zajímavý jednak z hlediska možnosti vizuálně (a tedy názorně) reprezentovat program a též z důvodu dalších zajímavých vlastností.
+
+Koncept DFP vychází z Dataflow diagramů [RP](cite), které slouží jako druh analytického modelu. Základním stavebním prvkem je uzel orientovaného grafu nazývaný \textbf{blok}, který má \textbf{vstupní porty} a \textbf{výstupní porty}. Takovýto blok může být\begin{itemize}
+  \item \textbf{zdroj} (source)  pouze generuje data do sítě, nemá vstupní porty,
+  \item \textbf{stok} (sink)  datové toky v něm končí, nemá výstupní porty,
+  \item \textbf{pracovní blok} (processing block)  má vstupní i výstupní porty a provádí transformaci vstupů na výstupy.
+\end{itemize}
+
+
+Blok též může abstrahovat \emph{podgraf}, čímž získáváme \textbf{dekompozici}. Bloky jsou spojeny \textbf{orientovanými hranami}, které definují tok informací mezi bloky. \textbf{Data flow program} je poté tvořen jedním či více zdroji, určitým počtem pracovních bloků a jedním či více stoků.
+
+Výpočetní model funguje tak, že blok se vykoná, jakmile má k dispozici vstupní data. Bloky pracují nezávisle na sobě, \emph{bez vedlejších efektů}\footnote{toto je rys podobný funkcionálnímu paradigma [RP](ref) }. Tím odpadá nebezpečí \emph{deadlocks}, jelikož v systému nejsou žádné globální datové závislosti. 
+
+Prvním praktickým využitím DFP byl projekt SKETCHPAD, který představoval vizuální programovací jazyk na počítačí TX-2 [RP](cite) Sutherland, W.: On-Line Graphical Specification of Computer Procedures. (1966). Ukázka programu je na \ref{fig:dfp}.
+
+\begin{figure}[H!]{\centering\caption{Ukázka jednoduchého DFP}\label{fig:dfp}\end{figure}
+
+Ze současných DFP systémů můžeme jmenovat např. systém Informatica [TF](cite) či Quartz Composer, který je součástí vývojového prostředí XCode firmy Apple (\ref{fig:quartz}).
+
+\begin{figure}[H!]{\centering\caption{Ukázka DFP v editoru Quartz Composer}\label{fig:quartz}\end{figure}
+
+DFP ale nemusí být vždy nutně vizualizací grafu (ačkoliv většina vizuálních programovacích jazyků tuto podobu má). Existují i textové DFP a do této kategorie můžeme zařadit i běžný tabulkový kalkulátor (spreadsheet), např. Microsoft Excel: v kalkulátoru každá buňka reprezentuje buď hodnotu nebo výraz. Buňky mohou mít vazby závislosti na ostatní buňky. Výpočet probíhá dle data flow modelu: jakmile se buňka zaktualizuje, mohou se zaktualizovat buňky, které na ní závisí. Tento model bývá někdy specificky označován jako buňkově-orientované DFP (cell-oriented DFP) či reaktivní programování (Reactive programming).
+
+Do DFP paradigma spadá i \textbf{aktorový model}. Jedná se o model konkurentního běhu zavedený Carlem Hewittem z MIT v 70.letech 20.stol. Cílem výzkumu bylo vyvinout jednodušší způsoby paralelizace výpočtu. \textbf{Aktor} (actor) je agent, který přijímá a posílá zprávy, nezávisle na ostatních aktorech v systému. Při přijetí zprávy může aktor nastartovat nového aktora, provést výpočet nebo odpovědět zprávami jiným existujícím aktorům. V DF paradigma je aktor ekvivalentní uzlu a zprávy jsou ekvivalentní spojením mezi uzly. Aktorový model je prakticky využíván např. společností Twitter pro škálování výpočtu [RP](cite) Mok, W.: How twitter is scaling (June 2009), \url{https://waimingmok.wordpress}. com/2009/06/27/how-twitter-is-scaling/. 
+
+Jak je vidět, DFP představuje určité \emph{zastřešující paradigma} výpočtu, v rámci kterého můžeme aplikovat různá další paradigmata. Pro vizuální programovací jazyky je nejběžnější kombinace s \emph{imperativním paradigma}. Příklad while-bloku v systému VIPERS je na  \ref{fig:vipers}.
+
+\begin{figure}[H!]{\centering\caption{While-blok v systému VIPERS}\label{fig:vipers}\end{figure}}
+
+\textbf{Analýza jednotlivých paradigmat}
+
+V předcházejících kapitolách jsme si představili základní paradigmata tvorby software. Můžeme tedy nyní přistoupit k vyhodnocení vlastností jednotlivých paradigmat pro řešení zadání projektu. V tomto místě se bude jednat zatím o vyhodnocení na základě teoretických předpokladů jednotlivých paradigmat. Dále bude hrát podstatnou roli též vyhodnocení technologií realizujících daná paradigmata.
+
+\textbf{Funkcionální paradigma}
+
+Obecný lambda-kalkul představený ve [RP](ref) je zajímavý teoretický koncept, nicméně pro naše účely není příliš názorný. Ke stejnému názoru dospěla i většina autorů funkcionálních programovacích jazyků, jelikož se drží běžného typového systému (viz [RP](ref)).
+
+Funkce jakožto first-class objekt se však již zcela určitě prosadila do praxe a a budeme ji dále vést v patrnosti. 
+
+-konverze, -redukce a -konverze představují z našeho hlediska spíše implementační problematiku a nebudeme se tedy jimi dále zabývat. 
+
+Skládání funkcí, rekurze a další představené abstrakce mohou představovat užitečné stavební bloky pro naše účely a též je povedeme v patrnosti. Ve skládání a znovupoužívání abstrakcí spočívá základní \emph{modularita} funkcionálního programu. Tato modularita je na mnohem nižší úrovni granularity než modularita imperativního programu, čímž získáváme i vyšší flexibilitu a znovupoužitelnost, což jsou naše cíle.
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) vidíme jako \textbf{fundamentální paradigma} pro naše potřeby, a to z několika důvodů:\begin{itemize}
+  \item Paradigma je jednoduché na pochopení: pracuje pouze s pojmy \emph{blok} a \emph{datový tok}.
+  \item Vizuální reprezentace programu podporuje použití pro ne-programátorsky orientované uživatele.
+  \item Každý blok pracuje ze své podstaty \emph{bez vedlejších efektů}.
+  \item Program v DFP je přirozeně paralelizovaný, což umožňuje velmi efektivní zpracování na moderních vícejádrových procesorech, a to bez nutnosti jakýchkoliv speciálních úprav či konceptů.
+  \item Paradigma poskytuje intuitivní \emph{dekompozici} programů
+\end{itemize}
+
+
+Jedná se navíc o osvědčený přístup, např. transformace v systém Informatica jsou též reprezentovány pomocí DFP.
+
+\textbf{Závěr}
+
+Jakožto vhodné paradigma pro potřeby vyhledávání a transformace ve stromu vidíme \textbf{kombinaci funcionálního paradigma a programování pomocí datových toků} (DFP). Jak bylo vysvětleno v sekci o DFP, jedná se o zastřešující paradigma, které umožňuje vizuální přístup k programování. 
+
+K vyhodnocování pravidel považujeme za vhodný aparát \textbf{predikátovou logiku}. O logickém programování by bylo možné uvažovat i pro vyhledávání a transformace prováděné ve stromě. Výhodou logického programování je jeho vysoká expresivita a srozumitelnost. Zde je však třeba opatrnosti, jelikož ve složitějších situacích se logické paradigma v praxi dostává do problémů, jak bylo vysvětleno v příslušné kapitole., nejpokročilejší variantou imperativního přístupu je \emph{objektově-orientované paradigma}. Budeme se tedy dále zabývat rešerší technologií založených na tomto přístupu. Pro objektově orientované programování (OOP) se užívají především tzv. \textbf{hybridní objektově-orientované jazyky}. Ty vznikly obohacením jazyků pro strukturované programování (především jazyka C) o určité statické i dynamické objektově-orientované rysy. I když tyto jazyky umožňují využívat většinu OO rysů, je pro ně charakteristická ta vlastnost, že v nich lze OO zásady šidit používáním klasických prostředků (stejně snadno, jako je možné ve Fortranu nebo Basicu obcházet zásady strukturovaného programování). Mezi tyto jazyky patří především Object-Pascal, Object ADA, Objective C, C++, Java, C# a Visual Basic. Právě hybridním programovacím jazykům a především jejich přímé návaznosti na klasické programovací jazyky dnes vděčíme za stále rostoucí široký zájem o využívání objektově orientovaných systémů.
+
+Vznik objektově orientovaného přístupu je však spojen s jazyky nazývanými \textbf{ryze objektově orientované jazyky (ryze OO jazyky)} Tyto jazyky byly a jsou od začátku navrhovány jako výhradně objektově orientované. Kromě objektů žádné jiné datové typy neobsahují. Jejich čistá syntaxe i model výpočtu jsou proto zpočátku pro klasicky založeného programátora zvláštní. Z určitého pohledu jsou při osvojování si nějakého čistě objektově orientovaného jazyka zvýhodněni úplní začátečníci oproti ostříleným programátorům například v jazycích FORTRAN či COBOL.
+V ryze OO jazycích chybí některé procedurální konstrukce, jako jsou například podprogramy, příkazy skoku a podobně. Naopak však tyto jazyky dovolují elegantně využít všech výhod objektově orientovaného přístupu ve srovnání s hybridními jazyky, v nichž lze (nebo je programátor nucen) objektově orientovanou technologii různými způsoby obcházet. 
+
+Uvedené odlišnosti a jazyků od hybridních objektově orientovaných jazyků vedou některé autory k definici ryze OO jazyků jako jazyků přímo objektově založených. Mezi čisté dynamické objektově orientované systémy patří jazyky vhodné především pro rozsáhlé úlohy z oblasti umělé inteligence, simulace, počítačové grafiky, databází i z jiných oborů. Jsou to například jazyky: Simula, Smalltalk, CLOS, Flavors, Dragoon, Eiffel, Beta, Mainsail, ESP a Object-Prolog. Protože byly navrhovány od samého počátku jako objektově orientované, tak je jejich výhodou mimo jiné i čistá syntaxe a úplné objektově orientované prostředí. Z hlediska průmyslového využití jsou však bohužel značně limitovány malou rozšířeností, se kterou je spojena i malá nabídka profesionálních implementací a především hotových či znovupoužitelných řešení a knihoven. Problematické je též napojení na stávající systémy a technologie.
+
+[TF](jako závěr vyjmenovat rozhodnutí, která vedla k výběru Javy)
+
+\textbf{Funkcionální jazyky}
+
+Funkcionální programovací jazyky jsou zaměřeny na implementaci funkcionálního paradigma. Dle míry shody s funkcionálním paradigmatem dělíme tyto jazyky na \begin{itemize}
+  \item čisté (pure)
+  \item smíšené (impure, hybrid).
+\end{itemize}
+
+
+Zatímco smíšené jazyky kromě funcionálních konstrukcí připouští i konstrukce jiné (typicky imperativní), čisté funkcionální jazyky nepřipouští jiné konstrukce. Je ovšem třeba podotknout, že ani jazyky řazené mezi čisté nejsou z praktických důvodů založeny výhradně na lambda-kalkulu. Operují totiž obvykle na ne-funkcionálních datových strukturách, které jsou pro praktické použití přirozenější. Jejich čistota je tedy myšlena jako rigoróznost přístupu k řešení algoritmu pomocí funkcionálních konstruktů (first-class funkce, funktory, skládání, apod.). Jako funkcionální jazyky můžeme z tohoto pohledu jmenovat:\begin{itemize}
+  \item Charity,
+  \item Clean,
+  \item Curry,
+  \item Haskell,
+  \item Hope,
+  \item Miranda,
+  \item Idris.
+\end{itemize}
+
+
+Smíšených jazyků můžeme poté napočítat více jak 40, a to nebereme v potaz fakt, že většina moderních programovacích jazyků (např. Ruby, Python, Smalltalk, C#) též umožňuje používat first-class funkce.
+
+Funkcionální programovací jazyky (čisté i smíšené) můžeme dále dělit podle různých kritérií, nejdiskutovanější je dělení na:\begin{itemize}
+  \item staticky typované jazyky,
+  \item dynamicky typované jazyky\footnote{toto dělení se týká též imperativních a objektově-orientovaných jazyků}.
+\end{itemize}
+
+
+\textbf{Užší výběr kandidátů}
+
+\textbf{Technologie pro práci s XML}
+
+
+
+\textbf{XML nástroje}\begin{itemize}
+  \item Popsat přístup xml a možnost napsat adaptér umožňující v podobném duchu pracovat nad libovolným stromem
+  \item Standardní jazyky XPath a XQuery
+  \item Vyjadřovací síla jednotlivých verzí
+  \item Problematika přehlednosti při složitějších dotazech 
+\end{itemize}
+
+
+\textbf{Regulární výrazy v jazyce Java}}
+\section{Formulace vysokoúrovňového doménově-specifického jazyka}
+\subsection{\subsection{Základy jazyka}
+\paragraph{Datové prvky a struktury}
+
+
+Návrh typů datových prvků a struktur vychází z 
+
+\textbf{\textbf{Programování pomocí datových toků}
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) [RP](cite) , nebo-li \textbf{dataflow programming} je paradigma, které modeluje program jakožto \emph{orientovaný graf} . Tento přístup je rozvíjen od 70.let 20.stol a je základem většiny \emph{vizuálních programovacích jazyků}. Pro nás je zajímavý jednak z hlediska možnosti vizuálně (a tedy názorně) reprezentovat program a též z důvodu dalších zajímavých vlastností.
+
+Koncept DFP vychází z Dataflow diagramů [RP](cite), které slouží jako druh analytického modelu. Základním stavebním prvkem je uzel orientovaného grafu nazývaný \textbf{blok}, který má \textbf{vstupní porty} a \textbf{výstupní porty}. Takovýto blok může být\begin{itemize}
+  \item \textbf{zdroj} (source)  pouze generuje data do sítě, nemá vstupní porty,
+  \item \textbf{stok} (sink)  datové toky v něm končí, nemá výstupní porty,
+  \item \textbf{pracovní blok} (processing block)  má vstupní i výstupní porty a provádí transformaci vstupů na výstupy.
+\end{itemize}
+
+
+Blok též může abstrahovat \emph{podgraf}, čímž získáváme \textbf{dekompozici}. Bloky jsou spojeny \textbf{orientovanými hranami}, které definují tok informací mezi bloky. \textbf{Data flow program} je poté tvořen jedním či více zdroji, určitým počtem pracovních bloků a jedním či více stoků.
+
+Výpočetní model funguje tak, že blok se vykoná, jakmile má k dispozici vstupní data. Bloky pracují nezávisle na sobě, \emph{bez vedlejších efektů}\footnote{toto je rys podobný funkcionálnímu paradigma [RP](ref) }. Tím odpadá nebezpečí \emph{deadlocks}, jelikož v systému nejsou žádné globální datové závislosti. 
+
+Prvním praktickým využitím DFP byl projekt SKETCHPAD, který představoval vizuální programovací jazyk na počítačí TX-2 [RP](cite) Sutherland, W.: On-Line Graphical Specification of Computer Procedures. (1966). Ukázka programu je na \ref{fig:dfp}.
+
+\begin{figure}[H!]{\centering\caption{Ukázka jednoduchého DFP}\label{fig:dfp}\end{figure}
+
+Ze současných DFP systémů můžeme jmenovat např. systém Informatica [TF](cite) či Quartz Composer, který je součástí vývojového prostředí XCode firmy Apple (\ref{fig:quartz}).
+
+\begin{figure}[H!]{\centering\caption{Ukázka DFP v editoru Quartz Composer}\label{fig:quartz}\end{figure}
+
+DFP ale nemusí být vždy nutně vizualizací grafu (ačkoliv většina vizuálních programovacích jazyků tuto podobu má). Existují i textové DFP a do této kategorie můžeme zařadit i běžný tabulkový kalkulátor (spreadsheet), např. Microsoft Excel: v kalkulátoru každá buňka reprezentuje buď hodnotu nebo výraz. Buňky mohou mít vazby závislosti na ostatní buňky. Výpočet probíhá dle data flow modelu: jakmile se buňka zaktualizuje, mohou se zaktualizovat buňky, které na ní závisí. Tento model bývá někdy specificky označován jako buňkově-orientované DFP (cell-oriented DFP) či reaktivní programování (Reactive programming).
+
+Do DFP paradigma spadá i \textbf{aktorový model}. Jedná se o model konkurentního běhu zavedený Carlem Hewittem z MIT v 70.letech 20.stol. Cílem výzkumu bylo vyvinout jednodušší způsoby paralelizace výpočtu. \textbf{Aktor} (actor) je agent, který přijímá a posílá zprávy, nezávisle na ostatních aktorech v systému. Při přijetí zprávy může aktor nastartovat nového aktora, provést výpočet nebo odpovědět zprávami jiným existujícím aktorům. V DF paradigma je aktor ekvivalentní uzlu a zprávy jsou ekvivalentní spojením mezi uzly. Aktorový model je prakticky využíván např. společností Twitter pro škálování výpočtu [RP](cite) Mok, W.: How twitter is scaling (June 2009), \url{https://waimingmok.wordpress}. com/2009/06/27/how-twitter-is-scaling/. 
+
+Jak je vidět, DFP představuje určité \emph{zastřešující paradigma} výpočtu, v rámci kterého můžeme aplikovat různá další paradigmata. Pro vizuální programovací jazyky je nejběžnější kombinace s \emph{imperativním paradigma}. Příklad while-bloku v systému VIPERS je na  \ref{fig:vipers}.
+
+\begin{figure}[H!]{\centering\caption{While-blok v systému VIPERS}\label{fig:vipers}\end{figure}}
+
+\textbf{Analýza jednotlivých paradigmat}
+
+V předcházejících kapitolách jsme si představili základní paradigmata tvorby software. Můžeme tedy nyní přistoupit k vyhodnocení vlastností jednotlivých paradigmat pro řešení zadání projektu. V tomto místě se bude jednat zatím o vyhodnocení na základě teoretických předpokladů jednotlivých paradigmat. Dále bude hrát podstatnou roli též vyhodnocení technologií realizujících daná paradigmata.
+
+\textbf{Funkcionální paradigma}
+
+Obecný lambda-kalkul představený ve [RP](ref) je zajímavý teoretický koncept, nicméně pro naše účely není příliš názorný. Ke stejnému názoru dospěla i většina autorů funkcionálních programovacích jazyků, jelikož se drží běžného typového systému (viz [RP](ref)).
+
+Funkce jakožto first-class objekt se však již zcela určitě prosadila do praxe a a budeme ji dále vést v patrnosti. 
+
+-konverze, -redukce a -konverze představují z našeho hlediska spíše implementační problematiku a nebudeme se tedy jimi dále zabývat. 
+
+Skládání funkcí, rekurze a další představené abstrakce mohou představovat užitečné stavební bloky pro naše účely a též je povedeme v patrnosti. Ve skládání a znovupoužívání abstrakcí spočívá základní \emph{modularita} funkcionálního programu. Tato modularita je na mnohem nižší úrovni granularity než modularita imperativního programu, čímž získáváme i vyšší flexibilitu a znovupoužitelnost, což jsou naše cíle.
+
+\textbf{Programování pomocí datových toků}
+
+Programování pomocí datových toků (DFP) vidíme jako \textbf{fundamentální paradigma} pro naše potřeby, a to z několika důvodů:\begin{itemize}
+  \item Paradigma je jednoduché na pochopení: pracuje pouze s pojmy \emph{blok} a \emph{datový tok}.
+  \item Vizuální reprezentace programu podporuje použití pro ne-programátorsky orientované uživatele.
+  \item Každý blok pracuje ze své podstaty \emph{bez vedlejších efektů}.
+  \item Program v DFP je přirozeně paralelizovaný, což umožňuje velmi efektivní zpracování na moderních vícejádrových procesorech, a to bez nutnosti jakýchkoliv speciálních úprav či konceptů.
+  \item Paradigma poskytuje intuitivní \emph{dekompozici} programů
+\end{itemize}
+
+
+Jedná se navíc o osvědčený přístup, např. transformace v systém Informatica jsou též reprezentovány pomocí DFP.
+
+\textbf{Závěr}
+
+Jakožto vhodné paradigma pro potřeby vyhledávání a transformace ve stromu vidíme \textbf{kombinaci funcionálního paradigma a programování pomocí datových toků} (DFP). Jak bylo vysvětleno v sekci o DFP, jedná se o zastřešující paradigma, které umožňuje vizuální přístup k programování. 
+
+K vyhodnocování pravidel považujeme za vhodný aparát \textbf{predikátovou logiku}. O logickém programování by bylo možné uvažovat i pro vyhledávání a transformace prováděné ve stromě. Výhodou logického programování je jeho vysoká expresivita a srozumitelnost. Zde je však třeba opatrnosti, jelikož ve složitějších situacích se logické paradigma v praxi dostává do problémů, jak bylo vysvětleno v příslušné kapitole. s uvážením cílů projektu a výsledků ontologické analýzy  
+
+\textbf{\textbf{Analýza Teradata}
+
+[TF](naformulovat)
+
+Ve validacích nad SQL stromem Teradaty se kromě klasického průchodu stromem používají tři věci\begin{itemize}
+  \item Union (a|b)
+  \item Podmínka na podstrom vybíraného uzlu (a[b])
+  \item Možnost použít negaci (a[not b])
+\end{itemize}
+
+
+Jako obecné transformace máme navržené\begin{itemize}
+  \item Přidání uzlu
+  \item Odebrání uzlu
+  \item Změna textace uzlu
+  \item Přidání komentáře
+  \item Smazání bílých znaků nebo komentáře
+  \item 
+\end{itemize}
+
+
+Mezi složitější pravidla, které se budou muset nejspíš drátovat pak patří\begin{itemize}
+  \item Náhrada číselných odkazů v ORDER BY a GROUP BY za názvy odkazovaných sloupců
+  \item Doplnění objektům plné kvalifikace
+  \item Přejmenování objektu a propagace této změny do zbytku skriptu
+  \item Sjednocení psaní DB objektů vůči datovému slovníku
+  \item Přejmenování aliasů na standard zákazníka
+  \item Nahrazení insertu do konkrétní tabulky voláním makra
+  \item Přidání explain příkazu před všechny SQL statementy s braním v potaz transakčních příkazů v BTEQu
+  \item Vložení makra na konkrétní místo se zajištěním, aby bylo přítomno ve skriptu právě jednou
+\end{itemize}}
+
+\textbf{Strukturální analýza}
+
+Z doménových analýz vyplývá, že je třeba operovat nad poměrně různými stromovými strukturami. Vzhledem k potřebě obecnosti řešení i pro budoucí klienty s rozdílnými doménami se tedy musíme omezit na stromové struktury v jejich nejobecnější podobě. Můžeme tedy definovat následující základní ontologické pojmy (prvky):\begin{itemize}
+  \item \textbf{strom} (tree)  graf bez cyklů. Graf definujeme v souladu s . Strom je rekurzivní struktura, tudíž každý uzel stromu definuje vlastní strom, který nazýváme \textbf{podstrom}.
+  \item \textbf{uzel stromu} (node); definujeme speciální uzel (konstanta): \textbf{kořen} (root)
+  \item \textbf{označení uzlu} (node tag)
+  \item \textbf{obsah uzlu stromu} (node contents),
+  \item \textbf{atribut uzlu stromu} (node attribute),
+  \item \textbf{klíč atributu} (attribute key)
+  \item \textbf{hodnota atributu} (attribute value).
+\end{itemize}
+
+
+Základní množiny v doméně řešení tedy budou:\begin{itemize}
+  \item Množina všech uzlů stromu: 
+\end{itemize}
+
+
+Odvozené množiny poté jsou:\begin{itemize}
+  \item Množina všech označení uzlů: 
+  \item Množina všech obsahů uzlů: 
+  \item Množina všech atributů: 
+  \item Množina všech klíčů atributů: 
+  \item Množina všech hodnot atributů: 
+\end{itemize}
+
+
+\textbf{Behaviorální analýza}
+
+Z hlediska klíčových funkcí, chování a operací v doméně rozeznáváme tyto pojmy:\begin{itemize}
+  \item vytvoření datového elementu (create)
+  \item změna hodnoty datového elementu (update)
+  \item odstranění datového elementu (delete)
+  \item vyhledání datového elementu ve stromě (search)
+  \item transformace datového elementu (transform)
+  \item ověření podmínky (check)
+\end{itemize}
+.  \begin{itemize}
+  \item \texttt{tree}  typ reprezentující strom. Jelikož je strom rekurzivní struktura, tento typ reprezentuje i libovolný podstrom.
+\end{itemize}
+
+
+Dále budeme rozlišovat tyto základní typy:\begin{itemize}
+  \item \texttt{node}  uzel stromu. Má jméno a hodnotu a obsahuje kolekci atributů. Jedná se o složený datový typ.
+  \item \texttt{attribute}  atribut. Má jméno a obsahuje páry klíč-hodnota. Jedná se složený datový typ.
+  \item \texttt{keyword}  klíčové slovo (označení, jméno, uzlu, atributu, apod.); literál: \texttt{:keyword}. Jedná se o elementární datový typ.
+  \item \texttt{string}  řetězec znaků; literál: \texttt{'string}' nebo \texttt{string}. Jedná se o homogenní složený datový tip.
+  \item \texttt{integer}(*)  celé číslo; literál: \texttt{123}. Jedná se o elementární datový tip.
+  \item \texttt{float}(*)  desetinné číslo; literál: \texttt{123.456} Jedná se o elementární datový tip.
+\end{itemize}
+
+
+(*) Typy vyskytujíci se v doméně pravidel.
+
+Dále rozlišujeme 3 typy kolekcí hodnot (\texttt{collection}) s následujícími vlastnostmi: kolekce  typ přístupu  velikost  typ prvků  řazení  duplicity  literál  množina (set)   hodnotou   dynamická   libovolný typ   žádné   bez duplicit  \texttt{{prvek1 prvek2 prvekN}}   sekvence (sequence)   indexem či sekvenčně   dynamická   libovolný typ   definované  pořadím   duplicity   \texttt{[prvek1 prvek2 prvekN]}   asociativní pole (dictionary)   klíčem   dynamická   libovolný typ   žádné   klíče jsou unikátní, hodnoty mohou mít duplicity   \texttt{{:klic1 :hodnota1 :klic2 :hodnota2}}  
+
+Speciálním typem je \textbf{lambda funkce} (zkráceně lambda), která představuje soubor operací. Lambda funkce podobně jako běžná funkce obsahuje nula až N vstupů a jeden výstup. Syntaxe zápisu lambda funkcí v tomto dokumentu:\begin{itemize}
+  \item \texttt{(lambda input-type1 x input-type2 x   ouptput-type)} 
+\end{itemize}
+
+
+V případě, kdy na typu nezáleží, budeme používat výraz \begin{itemize}
+  \item \texttt{Any}
+\end{itemize}
+
+
+\textbf{Množinové operace}
+
+Nad množinami (\texttt{set}) jsou definovány množinové predikáty a operace. Jejich sémantika odpovídá matematické definici.\begin{itemize}
+  \item \texttt{in?}  prvek množiny
+  \item \texttt{subset?}  podmožina
+  \item \texttt{union}  sjednocení množin
+  \item \texttt{intersection}  průnik množin
+  \item \texttt{difference}  rozdíl množin
+\end{itemize}
+
+
+\textbf{Logické výrazy}
+
+Logické výrazy (logic formula) jsou založeny na . Pracují s \emph{elementárními výroky}, které nabývají pravdivostních hodnot \texttt{true} (pravda) či \texttt{false} (nepravda). Pomocí \emph{logických spojek} poté tvoříme \emph{logické formule}:\begin{enumerate}
+  \item Každý elementární výrok je formule.
+  \item Jsou-li \emph{x} a \emph{y} elementární výroky, jsou i (NOT \emph{x}), (\emph{x} AND \emph{y}), (\emph{x} OR \emph{y}), (\emph{x} XOR \emph{y}), (\emph{x} IMPLIES \emph{y}) také formule \footnote{Byla vybrána tato podmnožina všech možných spojek, která je v praxi nejpoužívanější. Tato podmnožina tvoří \emph{úplný (nikoliv minimální) systém logických spojek}.}
+\end{enumerate}
+
+
+Pozn.:\begin{enumerate}
+  \item Priorita log. spojek je následující: 
+  \begin{enumerate}
+    \item NOT
+    \item AND, OR
+    \item IMPLIES
+  \end{enumerate}
+  \item Vnější závorky lze vynechávat, pokud je pořadí operací dáno prioritami.
+\end{enumerate}
+
+
+\emph{V první verzi prototypu budou logické výrazy zadávány v syntaxi jazyka Clojure, tj. v prefixové syntaxi, např  odpovídá .}}
+\subsection{\subsubsection{Jazyk pro vyhledávání ve stromě}
+
+
+Jazyk je postaven na . Základními jednotkami jsou \textbf{operační uzly (action nodes)}, které provádějí určité operace nad daty, která tečou po \textbf{hranách}, které je spojují. Jedná se tedy o orientovaný graf. Každý uzel může mít několik \textbf{vstupních datových toků} a několik \textbf{výstupních datových toků}.
+
+Datové toky mohou být:\begin{itemize}
+  \item atomické hodnoty,
+  \item kolekce hodnot,
+  \item lambda funkce,
+  \item predikáty,
+  \item logické výrazy.
+\end{itemize}
+\subparagraph{Pravidla pro vstupní datové toky}
+\begin{itemize}
+  \item Uzly, které očekávají kolekce jako vstupní tok pro pohodlí provádí \emph{převod atomické hodnoty na kolekci} obsahující (jeden) prvek.
+  \item Operace reprezentovaná uzlem se provede až v okamžiku, kdy jsou k dispozici všechny vstupní datové toky.
+\end{itemize}
+
+
+\textbf{Algoritmus}
+
+Základem algoritmu jsou vždy \textbf{operační uzly}. Rozlišujeme dva typy těchto uzlů:\begin{itemize}
+  \item filtrace,
+  \item transformace.
+\end{itemize}
+
+
+\textbf{Filtrace}
+
+Filtrace je operace, která vytváří podmnožinu prvků na vstupu. Jeden vstupní datový tok je vždy \emph{lambda funkce} vracející pravdivostní hodnotu a druhý jsou filtrované prvky. Tyto mohou být:\begin{itemize}
+  \item kolekce: výstupní datový tok je potom typu kolekce, která je podmnožinou kolekce na vstupu 
+  \begin{itemize}
+    \item \texttt{filter-on-collection: collection x (lambda Any  Boolean)  collection}
+  \end{itemize}
+  \item strom: výstupní datový tok je kolekce podstromů stromu 
+  \begin{itemize}
+    \item\texttt{filter-on-tree: tree x (lambda Any  Boolean)  tree}
+  \end{itemize}
+  \end{itemize}
+
+
+Sémantika operace filtrace je následující: vstup je prvek po prvku filtrován přes logickou formuli: prvky, pro které je formule vyhodnocena jako \texttt{true}, jsou zahrnuty do výsledku, prvky, pro které má hodnotu \texttt{false}, nejsou do výsledku zahrnuty.
+
+\textbf{Transformace}
+
+Transformace je operace, kdy jeden či více vstupních datových toků typu atomická hodnota či kolekce je transformován na jinou atomickou hodnotu či kolekci.
+
+\textbf{Transformace typu tree  node}      \begin{itemize}
+  \item \texttt{tree2root: tree  node}  výsledkem je kořen stromu
+\end{itemize}
+
+
+\textbf{Transformace typu node  tree}\begin{itemize}
+  \item \texttt{root2tree: node  tree}  výsledkem je strom
+\end{itemize}
+
+
+\textbf{Transformace typu node  node}
+
+Vstupem transformace je uzel (či kolekce uzlů), výstupem je jiný uzel či jiná kolekce uzlů.\begin{itemize}
+  \item vertikální
+  \begin{itemize}
+    \item dolů
+      \begin{itemize}
+      \item \texttt{node2children}  přímí potomci
+      \item \texttt{node2childrenN}  potomci tranzitivně až do hloubky N
+      \item \texttt{node2children*}  transitivní uzávěr všech potomků
+    \end{itemize}
+    \item nahoru
+      \begin{itemize}
+      \item \texttt{node2parents}  všichni rodiče až ke kořenu
+      \item \texttt{node2parent}  přímý rodič  odvozená transformace \texttt{(first parents)}
+      \item \texttt{node2parentN}  N-tý rodič  odvozená transformace \texttt{(nth parents)}
+    \end{itemize}
+    \end{itemize}
+  \item horizontální
+  \begin{itemize}
+    \item doleva
+      \begin{itemize}
+      \item \texttt{node2left-siblings}  leví sourozenci
+      \item \texttt{node2left-siblingN}  N-tý levý sourozenec  odvozená transformace \texttt{(nth left-siblings)}
+    \end{itemize}
+    \item doprava
+      \begin{itemize}
+      \item \texttt{node2right-siblings}  praví sourozenci
+      \item \texttt{node2right-siblingN}  N-tý pravý sourozenec  odvozená transformace \texttt{(nth right-siblings)}
+    \end{itemize}
+    \end{itemize}
+    \end{itemize}
+
+
+\textbf{Transformace typu node}
+
+Jedná se o transformace, kde výsledem transformace je jiný typ než uzel stromu.          \begin{itemize}
+  \item \texttt{node2tag: node  string}  označení uzlu
+  \item \texttt{node2contents: node  string}  obsah uzlu stromu
+  \item \texttt{node2attributes: node  sequence of attributes}  kolekce atributů. 
+\end{itemize}
+
+
+<note>
+Pro zkrácení zápisu budeme místo sequence of attributes používat pouze attributes a podobně místo sequence of nodes pouze nodes, atd.
+</note>
+
+\textbf{Transformace typu attribute}\begin{itemize}
+  \item \texttt{attribute2key: attribute  keyword}  jméno (klíč) atributu
+  \item \texttt{attribute2value: attribute  string}  hodnota atributu
+\end{itemize}
+
+
+\textbf{Transformace typu set x set  set}
+
+Jedná se o klasické množinové operace, které mají na vstupu dvě množiny a výsledkem je nová množina:\begin{itemize}
+  \item \texttt{union}  sjednocení dvou množin
+  \item \texttt{intersection}  průnik dvou množin
+  \item \texttt{difference}  rozdíl dvou množin (diference)
+  \item \texttt{symmetric-difference}  symetrická diference
+\end{itemize}
+
+
+\textbf{Transformace sekvencí}\begin{itemize}
+  \item \texttt{first: sequence  atomic value}  první prvek sekvence
+  \item \texttt{last: sequence  atomic value}  poslední prvek sekvence
+  \item \texttt{nth: sequence x integer  atomic value}  n-tý prvek sekvence 
+\end{itemize}}
+\subsection{\subsubsection{Jazyk pro ověřování podmínek}
+
+
+Podmínky jsou založeny na \textbf{tvrzení (assertion)}, jež jsou aplikována na vyhledané prvky. Tvrzení jsou formulována ve zjednodušené predikátové logice:\begin{itemize}
+  \item Universum , nad kterým stavíme tvrzení, je dáno sjednocením množin uzlů a atributů  a všech ostatních typů (viz Typový systém).
+  \item \textbf{Term} je definován opět rekurentně:
+  \begin{enumerate}
+    \item Konstanta či proměnná je term.
+    \item \textbf{Funkce} aplikovaná na jeden či více termů je též term: 
+  \end{enumerate}
+  \item Dále zavádíme \textbf{atomické formule} obsahující predikáty aplikované na termy: 
+  \item Z nich pak tvoříme \textbf{formule} následující rekurentní definicí:
+  \begin{enumerate}
+    \item Každá atomická formule je formule.
+    \item Jsou-li \emph{X} a \emph{Y} formule, jsou (NOT \emph{X}), (\emph{X} AND \emph{Y}), (\emph{X} OR \emph{Y}), (\emph{X} XOR \emph{Y}), (\emph{X} IMPLIES \emph{Y}) také formule. \footnote{Platí stejné priority jako u logických výrazů.}
+    \item Je-li \emph{x} individuální proměnná a \emph{Y} formule, jsou i FOR-ALL(\emph{x}, \emph{Y}) a EXISTS(\emph{x}, \emph{Y}) formule.
+  \end{enumerate}
+  \end{itemize}
+
+
+Jádrem tvrzení je poslední řádek, tedy schopnost specifikovat, co musí splňovat všechny prvky populované množiny, příp., že musí existovat nějaký prvek s určitými vlastnostmi, nebo složitější tvrzení, kde mohou být logické kombinace obojího.
+
+\textbf{Základní funkce}      \begin{itemize}
+  \item 
+
+\textbf{Funkce concat}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} spojení dvou sekvencí
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{seq1..seqN: sequence}  sekvence
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{concatenated-seq: sequence}  sekvence, která vznikla spojením sekvencí \texttt{seq1} až \texttt{seqN}.
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy} (sequence operation)
+  \item 
+
+\textbf{Funkce count}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} Spočítá počet prvků v kolekci
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{collection: Collection}  kolekce prvků
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{count: Integer}  počet prvků v kolekci
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy} (collection operation)
+  \item 
+
+\textbf{Funkce lowcase}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} Převede string na verzálky
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{string: String}  řetězec k transformaci
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{lowcase-string: String}  řetězec, kde všechny znaky jsou převedeny na verzálky
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy}      \begin{itemize}
+  \item PASS: lowcase() = \texttt{}
+  \item PASS: lowcase(a) = \texttt{a}
+  \item PASS: lowcase(A) = \texttt{a}
+  \item PASS: lowcase(ABC) = \texttt{abc}
+  \item PASS: lowcase(AbC) = \texttt{abc}
+  \item PASS: lowcase(AB+-.) = \texttt{ab+-.}
+\end{itemize}
+ (string operation)
+  \item 
+
+\textbf{Funkce up}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} Převede string na kapitálky
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{string: String}  řetězec k transformaci
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{upcase-string: String}  řetězec, kde všechny znaky jsou převedeny na kapitálky
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy} (string operation)
+\end{itemize}
+
+
+\textbf{Základní predikáty}\begin{itemize}
+  \item 
+
+\textbf{Predikát matches?}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} Testuje, jestli vstup odpovídá regulárnímu výrazu
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{text: String}  testovaný text
+    \item \texttt{regexp: Regexp}  regulární výraz v syntaxi \href{http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html}{Java Pattern}
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{O: Boolean}  \texttt{true} v případě, že \texttt{text} odpovídá \texttt{regexp}, jinak false.
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy}      \begin{itemize}
+  \item 
+  \item PASS: \texttt{/root/node1/@attr11} matches \texttt{at+r1._val}
+  \item FAIL: \texttt{/root/node1/@attr11} matches \texttt{at+r1._valXX}
+  \item PASS: \texttt{/root/node1/@attr12} matches \texttt{at..r12_val} and \texttt{att.12_val} 
+  \item FAIL: \texttt{/root/node1/@attr12} matches \texttt{at..r99_val}
+  \item PASS: \texttt{/root/node2/@attr21} matches \texttt{attr21_val}
+  \item FAIL: \texttt{/root/node2/@attr21} matches \texttt{attr99_val}
+  \item PASS: \texttt{/root/node3/@attr31} matches \texttt{attr31.val}
+  \item FAIL: \texttt{/root/node3/@attr31} matches \texttt{aattr31.val}
+  \item PASS: \texttt{/root/node3/node31/@attr311} matches \texttt{attr311.val}
+  \item FAIL: \texttt{/root/node3/node31/@attr311} matches \texttt{x}
+\end{itemize}
+ (string predicate)
+  \item 
+
+\textbf{Predikát subseq?}
+
+\textbf{Specifikace}\begin{itemize}
+  \item \textbf{Účel:} Testuje, jestli jedna sekvence je podsekvencí druhé
+  \item \textbf{Vstupy:} 
+  \begin{itemize}
+    \item \texttt{seq1: Sequence}  potenciální podsekvence
+    \item \texttt{seq1: Sequence}  sekvence potenciálně obsahující podsekvenci
+  \end{itemize}
+  \item \textbf{Výstupy:}
+  \begin{itemize}
+    \item \texttt{O: Boolean}  \texttt{true} v případě, že \texttt{seq1} je podsekvence \texttt{seq2}, jinak \texttt{false}.
+  \end{itemize}
+  \end{itemize}
+
+
+\textbf{Testy} (sequence predicate)
+\end{itemize}}
+\subsubsection{Potřebné transformační operace}
+\subsubsection{Možnosti jazyků pro vyhledávání}
+\paragraph{XML nástroje – XSLT}
+\paragraph{Clojure}
+\paragraph{Flow based programming}
+\subsubsection{Potřebná výrazová síla}
+\subsection{\paragraph{Jazyk pro formulace úprav stromu}
+
+
+Nad uzly stromu je možné provádět transformace. Základní transformace jsou\footnote{pojmenovány v souladu se zažitým pojmem \href{http://en.wikipedia.org/wiki/Create,_read,_update_and_delete}{CRUD}}:\begin{itemize}
+  \item \texttt{create},
+  \item \texttt{update},
+  \item \texttt{delete}.
+\end{itemize}
+
+
+Tyto operace mohou být aplikovány na libovolný \emph{základní prvek}: Prvek  \texttt{create}  \texttt{update}  \texttt{delete}  node   \texttt{create-node}  \texttt{update-node}  \texttt{delete-node}  node value   update na neprázdnou hodnotu  \texttt{update-node-value}  update na prázdnou hodnotu  attribute   \texttt{create-attribute}  \texttt{update-attribute}  \texttt{delete-attribute}  attribute value   update na neprázdnou hodnotu  \texttt{update-attribute-value}  update na prázdnou hodnotu  TODO: dodělat   \emph{\href{mailto:robert.pergl@fit.cvut.cz}{Robert Pergl} 2013/08/01 18:17}}
+\section{Návrh architektury řešení}
+\section{Návrh algoritmů vyhodnocování pravidel}
+\begin{itemize}
+  \item Tato kapitola má být ve zvláštním dokumentu a mít vlastní prototypy
+  \item Rozebrat efektivitu a rychlost jednotlivých možností jak pro všechny potřebné jazyky
+\end{itemize}
+
+
+\end{document}
