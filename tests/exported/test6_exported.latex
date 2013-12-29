@@ -1,0 +1,18 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{hyperref}
+\begin{document}
+
+
+
+
+\href{http://localhost/_bp/doku.php?id=projects:industry:profinit:dokument_tacr_jazyk}{Struktura dokumentu}
+
+\href{http://localhost/_bp/doku.php?id=projects:open_case}{OpenCASE}
+
+\href{http://localhost/_bp/doku.php?id=test:test4}{test4}
+
+\href{http://localhost/_bp/doku.php?id=test:test2}{AAA}
+
+\end{document}

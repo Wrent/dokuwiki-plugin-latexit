@@ -467,9 +467,41 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-    // $link like 'wiki:syntax', $title could be an array (media)
+   
+    /**
+     * function is called, when renderer finds an internal link
+     * It resolves the internal link (namespaces, URL)
+     * Depending on the configuration:
+     *     It calls proper function in LaTeX depending on the title
+     * @param type $link Internal link (can be without proper namespace)
+     * @param type $title Title, can be null or array (if it is media)
+     */
     function internallink($link, $title = NULL) {
+        global $ID; //in this global var DokuWiki stores the current page id with namespaces
         
+        $link = $this->_latexSpecialChars($link);
+        $title = $this->_latexSpecialChars($title);
+        $package = new Package('hyperref');
+        $this->_addPackage($package);
+        
+        $link_original = $link;
+        
+        //FIXME configurable
+        //handle internal links as they were external
+        $current_namespace = getNS($ID); //get current namespace from current page
+        resolve_pageid($current_namespace, $link, $exists); //get the page ID with right namespaces
+        //$exists stores information, if the page exists. We don't care about that right now. FIXME?
+        $params = '';
+        $absoluteURL = true;
+        $url = wl($link, $params, $absoluteURL); //get the whole URL
+        //FIXME keep hash in the end? have to test!
+        
+        //FIXME title pictures
+        if(is_null($title)) {
+            $this->doc .= '\\href{'.$url.'}{'.$link_original.'}';
+        } else {
+            $this->doc .= '\\href{'.$url.'}{'.$title.'}';
+        }
     }
 
     /**
@@ -479,6 +511,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $title Title, can be null or array (if it is media)
      */
     function externallink($link, $title = NULL) {
+        $link = $this->_latexSpecialChars($link);
+        $title = $this->_latexSpecialChars($title);
         $package = new Package('hyperref');
         $this->_addPackage($package);
         //FIXME pictures
@@ -517,6 +551,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $name Name, can be null or array (if it is media)
      */
     function emaillink($address, $name = NULL) {
+        $address = $this->_latexSpecialChars($address);
+        $name = $this->_latexSpecialChars($name);
         $package = new Package('hyperref');
         $this->_addPackage($package);
         //FIXME pictures
