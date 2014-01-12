@@ -1,18 +1,43 @@
 \documentclass[a4paper, 11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[czech]{babel}
-\usepackage{hyperref}
+\usepackage{fixltx2e}
+\usepackage[normalem]{ulem}
 \begin{document}
 
 
 
 
-\href{http://localhost/_bp/doku.php?id=projects:industry:profinit:dokument_tacr_jazyk}{Struktura dokumentu}
 
-\href{http://localhost/_bp/doku.php?id=projects:open_case}{OpenCASE}
 
-\href{http://localhost/_bp/doku.php?id=test:test4}{test4}
 
-\href{http://localhost/_bp/doku.php?id=test:test2}{AAA}
+\section{Nadpis 1}
+\subsubsection{Nadpis 2}
+
+
+\textbf{Nadpis 3}
+
+\textbf{Nadpis 4}
+
+\textbf{Nadpis 5}
+
+
+
+
+\textbf{Tučné}
+\emph{Kurzíva}
+\underline{Podtržené}
+\texttt{Neproporcionální text}
+\textsubscript{Dolní index}
+\textsuperscript{Horní index}
+\sout{Přeškrtnuté}
+
+Odstavec
+Druhý
+
+Odstavec\\
+Druhý
+
+xxx\footnote{Poznámka pod čarou}
 
 \end{document}

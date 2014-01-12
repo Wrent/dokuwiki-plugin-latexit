@@ -1,7 +1,7 @@
 \documentclass[a4paper, 11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[czech]{babel}
-\usepackage[normalem]{ulem}
+\usepackage[unicode]{hyperref}
 \begin{document}
 
 \section{Kořenový dokument}
@@ -9,19 +9,10 @@
 
 Text kořenového dokumentu.
 
-\subsection{Vnořený dokument}
 
+~~~LINK-RECURSION~~~
 
-Text vnořeného dokumentu.
-
-\subsubsection{Vnořený dokument 2}
-
-
-Text vnořeného dokumentu 2
-
-\sout{deleted}
-
-
+\href{http://localhost/_bp/doku.php?id=test:test7-vnoreny}{Odkaz}
 
 Text kořenového dokumentu.
 

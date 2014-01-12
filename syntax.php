@@ -16,21 +16,14 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return string Syntax mode type
      */
     public function getType() {
-        return 'FIXME: container|baseonly|formatting|substition|protected|disabled|paragraphs';
-    }
-
-    /**
-     * @return string Paragraph type
-     */
-    public function getPType() {
-        return 'FIXME: normal|block|stack';
+        return 'substition';
     }
 
     /**
      * @return int Sort order - Low numbers go before high numbers
      */
     public function getSort() {
-        return FIXME;
+        return 295;
     }
 
     /**
@@ -39,13 +32,12 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('<FIXME>', $mode, 'plugin_latexit');
-//        $this->Lexer->addEntryPattern('<FIXME>',$mode,'plugin_latexit');
+        $this->Lexer->addSpecialPattern('~~RECURSIVE~~', $mode, 'plugin_latexit');
     }
-
-//    public function postConnect() {
-//        $this->Lexer->addExitPattern('</FIXME>','plugin_latexit');
-//    }
+    
+    public function isSingleton() {
+        return false;
+    }
 
     /**
      * Handle matches of the latexit syntax
@@ -57,9 +49,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return array Data for the renderer
      */
     public function handle($match, $state, $pos, &$handler) {
-        $data = array();
-
-        return $data;
+        return array($match, $state, $pos);
     }
 
     /**
@@ -71,10 +61,15 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, &$renderer, $data) {
-        if ($mode != 'xhtml')
-            return false;
+        if ($mode == 'xhtml') {
+            return true;
+        } elseif ($mode == 'latex') {
+            //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
+            $renderer->_setRecursive(true);
+            return true;
+        }
 
-        return true;
+        return false;
     }
 
 }

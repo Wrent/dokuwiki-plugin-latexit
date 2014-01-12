@@ -22,6 +22,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $list_opened;
     private $recursion_level;
     private $headers_level;
+    private $recursive;
 
     /**
      * Make available as LaTeX renderer
@@ -40,6 +41,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return 'latex';
     }
 
+    
+    public function isSingleton() {
+        return false;
+    }
     /**
      * function is called, when a document is started to being rendered.
      * It adds headers to the LaTeX document and sets the browser headers of the file.
@@ -52,6 +57,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
         $this->packages = array();
         $this->list_opened = FALSE;
+        $this->recursive = FALSE;
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
         } else {
@@ -74,15 +80,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $header = $header_default;
             $this->doc .= $header . $packages . $document_start;
             $this->doc .= "\n\n";
+            
+            //set the headers, so the browsers knows, this is not the HTML file
+            header('Content-Type: application/x-latex');
+            header('Content-Disposition: attachment; filename="output.latex";');
         } else {
             $this->doc .= '~~~PACKAGES-START~~~';
             $this->doc .= '~~~PACKAGES~~~';
             $this->doc .= '~~~PACKAGES-END~~~';
         }
-
-        //set the headers, so the browsers knows, this is not the HTML file
-        header('Content-Type: application/x-latex');
-        header('Content-Disposition: attachment; filename="output.latex";');
     }
 
     /**
@@ -116,6 +122,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $pos ???
      */
     function header($text, $level, $pos) {
+        
         if($this->_immersed()) {
             $level += $this->headers_level;
         }
@@ -493,11 +500,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     // $link like 'SomePage'
     function camelcaselink($link) {
-        
+        $this->internallink($link,$link);
     }
 
     function locallink($hash, $name = NULL) {
-        
+
     }
 
     /**
@@ -513,10 +520,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $latexit_level;
         global $latexit_headers;
         
-        $recursive = true;
-
-
-        $link = $this->_latexSpecialChars($link);
         $title = $this->_latexSpecialChars($title);
 
         $link_original = $link;
@@ -529,23 +532,29 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $url = wl($link, $params, $absoluteURL); //get the whole URL
         //FIXME keep hash in the end? have to test!
         //FIXME configurable
-        if ($recursive) {
+        if ($this->recursive) {
+            
+            //FIXME bacha na nekonecnou rekurzi
             $latexit_level = $this->recursion_level + 1;
             $latexit_headers = $this->headers_level;
+            
             $data = p_cached_output(wikifn($link), 'latexit');
             $data = $this->_loadPackages($data);
             $this->doc .= $data;
         } else {
             //handle internal links as they were external
             $package = new Package('hyperref');
+            //to fix encoding warning
+            $package->addParameter('unicode');
             $this->_addPackage($package);
             //FIXME title pictures
-            if (is_null($title)) {
+            if (is_null($title) || trim($title) == '') {
                 $this->doc .= '\\href{' . $url . '}{' . $link_original . '}';
             } else {
                 $this->doc .= '\\href{' . $url . '}{' . $title . '}';
             }
         }
+        $this->recursive = FALSE;
     }
 
     /**
@@ -555,9 +564,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $title Title, can be null or array (if it is media)
      */
     function externallink($link, $title = NULL) {
-        $link = $this->_latexSpecialChars($link);
         $title = $this->_latexSpecialChars($title);
         $package = new Package('hyperref');
+        //to fix encoding warning
+        $package->addParameter('unicode');
         $this->_addPackage($package);
         //FIXME pictures
         if (is_null($title)) {
@@ -595,9 +605,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $name Name, can be null or array (if it is media)
      */
     function emaillink($address, $name = NULL) {
-        $address = $this->_latexSpecialChars($address);
         $name = $this->_latexSpecialChars($name);
         $package = new Package('hyperref');
+        //to fix encoding warning
+        $package->addParameter('unicode');
         $this->_addPackage($package);
         //FIXME pictures
         if (is_null($name)) {
@@ -708,7 +719,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
 
         $packages = unserialize($pckg[1]);
-        if (!is_null($packages)) {
+        if (!is_null($packages) && is_array($packages)) {
             foreach ($packages as $package) {
                 $this->_addPackage($package);
             }
@@ -749,8 +760,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     private function _latexSpecialChars($text) {
-        //FIXME
+        $text = str_replace(array('\\','&','%','$','#','_','{','}','~','^'), array('\\\\','\&','\%','\$','\#','\_','\{','\}','\~','\^'), $text);
         return $text;
     }
 
+    private function _checkLinkRecursion($text) {
+        return preg_match('#~~~LINK-RECURSION~~~#si', $text);
+    }
+    
+    
+    public function _setRecursive($recursive) {
+        $this->recursive = $recursive;
+    }
 }

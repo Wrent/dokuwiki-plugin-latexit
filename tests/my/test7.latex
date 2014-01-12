@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[czech]{babel}
 \usepackage[normalem]{ulem}
+\usepackage[unicode]{hyperref}
 \begin{document}
 
 \section{Kořenový dokument}
@@ -17,6 +18,8 @@ Text vnořeného dokumentu.
 Text vnořeného dokumentu 2
 
 \sout{deleted}
+
+\href{http://localhost/_bp/doku.php?id=test:test7-vnoreny}{Odkaz}
 
 Text kořenového dokumentu.
 
