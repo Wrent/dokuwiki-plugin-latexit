@@ -28,7 +28,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Make available as LaTeX renderer
      */
     public function canRender($format) {
-        if ($format == 'latex') {
+        if ($format == 'latexit') {
             return true;
         }
         return false;
@@ -38,7 +38,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Return the rendering format of the renderer
      */
     public function getFormat() {
-        return 'latex';
+        return 'latexit';
     }
 
     
@@ -72,7 +72,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!$this->_immersed()) {
             //this is default LaTeX header right now, can be changed in configuration
             $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
-                    . "\\usepackage[utf8]{inputenc}\n"
+                    . "\\usepackage[utf8x]{inputenc}\n"
                     . "\\usepackage[czech]{babel}\n";
             $packages = '~~~PACKAGES~~~';
             $document_start = "\\begin{document}";
@@ -570,7 +570,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package->addParameter('unicode');
         $this->_addPackage($package);
         //FIXME pictures
-        if (is_null($title)) {
+        if (is_null($title) || trim($title) == '') {
             $this->doc .= '\\url{' . $link . '}';
         } else {
             $this->doc .= '\\href{' . $link . '}{' . $title . '}';
@@ -611,7 +611,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package->addParameter('unicode');
         $this->_addPackage($package);
         //FIXME pictures
-        if (is_null($name)) {
+        if (is_null($name) || trim($name) == '') {
             $this->doc .= '\\href{mailto:' . $address . '}{' . $address . '}';
         } else {
             $this->doc .= '\\href{mailto:' . $address . '}{' . $name . '}';

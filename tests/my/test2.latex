@@ -1,5 +1,5 @@
 \documentclass[a4paper, 11pt]{article}
-\usepackage[utf8]{inputenc}
+\usepackage[utf8x]{inputenc}
 \usepackage[czech]{babel}
 \usepackage{fixltx2e}
 \usepackage[normalem]{ulem}

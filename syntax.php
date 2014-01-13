@@ -63,7 +63,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
     public function render($mode, &$renderer, $data) {
         if ($mode == 'xhtml') {
             return true;
-        } elseif ($mode == 'latex') {
+        } elseif ($mode == 'latexit') {
             //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
             $renderer->_setRecursive(true);
             return true;
