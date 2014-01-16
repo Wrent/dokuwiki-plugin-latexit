@@ -644,6 +644,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         $pckg = new Package('graphicx');
+        $pckg->addCommand('\\graphicspath{{images/}}');
+        $this->_addPackage($pckg);
+        $namespaces = explode(':',$src);
+        for($i = 1; $i < count($namespaces);$i++){
+            if($i != 1) {
+                $path .= "/";
+            }
+            $path .= $namespaces[$i];
+        }
+        //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
+        $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
+        $this->doc .= "\includegraphics{".$path."}";
     }
 
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
@@ -787,6 +799,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             foreach ($this->packages as $package) {
                 $param = $this->_latexSpecialChars($package->printParameters());
                 $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
+                $packages .= $package->printCommands();
             }
         }
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);

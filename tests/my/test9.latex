@@ -4,7 +4,9 @@
 \usepackage{graphicx}
 \graphicspath{{images/}}
 \begin{document}
-\includegraphics{test-image}
 
+\includegraphics{test/52janeirob}
+
+Obrazek
 
 \end{document}

@@ -34,8 +34,10 @@ class Package {
         }
     }
     
-    public function addCommand() {
-        
+    public function addCommand($command) {
+        if (!in_array($command, $this->commands)) {
+            $this->commands[] = $command;
+        }
     }
 
     /**
@@ -49,6 +51,17 @@ class Package {
                 $params .= '[' . $p . ']';
             }
             return $params;
+        } else {
+            return "";
+        }
+    }
+    
+    public function printCommands() {
+        if (count($this->commands > 0)) {
+            foreach ($this->commands as $c) {
+                $commands .= $c."\n";
+            }
+            return $commands;
         } else {
             return "";
         }
