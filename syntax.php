@@ -32,7 +32,8 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('~~RECURSIVE~~', $mode, 'plugin_latexit');
+        //FIXME jenom 2-6 vlnek?
+        $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
     }
     
     public function isSingleton() {
@@ -49,7 +50,11 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return array Data for the renderer
      */
     public function handle($match, $state, $pos, &$handler) {
-        return array($match, $state, $pos);
+         $tildas = explode('RECURSIVE',$match);
+         if($tildas[0] == $tildas[1]){
+             return array($state, $tildas);
+         }
+        return array();
     }
 
     /**
@@ -61,11 +66,15 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, &$renderer, $data) {
+        $level = -1*strlen($data[1][0]) + 7;
         if ($mode == 'xhtml') {
+            //6 = 1, 5=2,4=3,3=4,2=5
+            $renderer->doc .= '<h'.$level.'>Next link recursively inserted</h'.$level.'>';
             return true;
-        } elseif ($mode == 'latexit') {
+        } elseif ($mode == 'latex') {
             //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
             $renderer->_setRecursive(true);
+            $renderer->_increaseLevel($level - 1);
             return true;
         }
 

@@ -1,0 +1,57 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{longtable}
+\usepackage{multirow}
+\begin{document}
+
+\begin{longtable}{|l|l|l|}
+\hline
+\textbf{Heading 1}   &  \textbf{Heading 2}    &  \textbf{Heading 3}  \\ 
+\hline 
+ Row 1 Col 1\newline aaaa     &  Row 1 Col 2      &  Row 1 Col 3         \\ 
+\hline 
+ Row 2 Col 1     & \multicolumn{2}{|l|}{ some colspan (note the double pipe) } \\ 
+\hline 
+ Row 3 Col 1     &  Row 3 Col 2      &  Row 3 Col 3         \\ 
+\hline 
+\end{longtable}
+
+\begin{longtable}{|l|l|l|}
+\hline
+  &  \textbf{Heading 1}    &  \textbf{Heading 2}  \\ 
+\hline 
+ \textbf{Heading 3}    &  Row 1 Col 2      &  Row 1 Col 3         \\ 
+\hline 
+ \textbf{Heading 4}      & no colspan this time &  \\ 
+\hline 
+ \textbf{Heading 5}     &  Row 2 Col 2      &  Row 2 Col 3         \\ 
+\hline 
+\end{longtable}
+
+\begin{longtable}{|l|l|l|}
+
+\hline
+ \textbf{Heading 1}  &  \textbf{Heading 2}    &  \textbf{Heading 3}  \\ 
+\hline 
+ Row 1 Col 1    &  \multirow{3}{*}{ this cell spans vertically }      &  Row 1 Col 3         \\ 
+\hline
+ Row 2 Col 1      &  & Row 2 Col 3 \\ 
+\hline 
+ Row 3 Col 1    &        &  Row 2 Col 3         \\ 
+\hline 
+\end{longtable}
+\begin{longtable}{|l|l|l|}
+
+\hline
+ \multicolumn{3}{|c|}{\textbf{Table with alignment}}  \\ 
+\hline 
+ \multicolumn{1}{|r|}{right}   &  \multicolumn{1}{|c|}{center}       &  left        \\ 
+\hline
+ left      & \multicolumn{1}{|r|}{right} & \multicolumn{1}{|c|}{center} \\ 
+\hline 
+ xxxxxxxxxxxx    & xxxxxxxxxxxx  &  xxxxxxxxxxxx         \\ 
+\hline 
+\end{longtable}
+
+\end{document}

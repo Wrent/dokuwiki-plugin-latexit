@@ -10,6 +10,7 @@ class Package {
 
     private $name;
     private $parameters;
+    private $commands;
 
     /**
      * Creates an Package object.
@@ -19,6 +20,7 @@ class Package {
     public function __construct($name) {
         $this->name = $name;
         $this->parameters = array();
+        $this->commands = array();
     }
 
     /**
@@ -30,6 +32,10 @@ class Package {
         if (!in_array($name, $this->parameters)) {
             $this->parameters[] = $name;
         }
+    }
+    
+    public function addCommand() {
+        
     }
 
     /**

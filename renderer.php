@@ -12,6 +12,7 @@ if (!defined('DOKU_INC'))
 
 require_once DOKU_INC . 'inc/parser/xhtml.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
+require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 require_once DOKU_INC . 'inc/parserutils.php';
 require_once DOKU_INC . 'inc/pageutils.php';
 
@@ -23,12 +24,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $recursion_level;
     private $headers_level;
     private $recursive;
+    private $last_level_increase;
+    private $cells_count;
+    private $table_cols;
+    private $last_colspan;
+    private $last_rowspan;
+    private $last_align;
+    private $in_table;
+    private $default_table_align;
+    private $rowspan_handler;
 
     /**
      * Make available as LaTeX renderer
      */
     public function canRender($format) {
-        if ($format == 'latexit') {
+        if ($format == 'latex') {
             return true;
         }
         return false;
@@ -38,7 +48,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Return the rendering format of the renderer
      */
     public function getFormat() {
-        return 'latexit';
+        return 'latex';
     }
 
     
@@ -58,6 +68,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
+        $this->in_table = FALSE;
+        $this->last_level_increase = 0;
+        $this->rowspan_handler = new RowspanHandler();
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
         } else {
@@ -126,7 +139,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if($this->_immersed()) {
             $level += $this->headers_level;
         }
-        $this->headers_level = $level;
+        $this->doc .= "\n\n";
         switch ($level) {
             case 1:
                 $this->_header('section', $text);
@@ -144,7 +157,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_header('subparagraph', $text);
                 break;
             default:
-                $this->doc .= "\n\n";
                 $this->_open('textbf');
                 $this->doc .= $this->_latexSpecialChars($text);
                 $this->_close();
@@ -189,7 +201,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It adds new line in LaTeX Document.
      */
     function linebreak() {
-        $this->doc .= "\\\\";
+        if ($this->in_table) {
+            $this->doc .= "\\newline ";
+        } else {
+            $this->doc .= "\\\\";
+        }
     }
 
     function hr() {
@@ -330,6 +346,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an unordered list in latex, even with right indention
      */
     function listu_open() {
+        $this->doc .= "\n";
         //FIXME possible refactor
         if ($this->list_opened) {
             for ($i = 1; $i < $this->last_level + 1; $i++) {
@@ -360,6 +377,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an ordered list in latex, even with right indention
      */
     function listo_open() {
+        $this->doc .= "\n";
         //FIXME possible refactor
         if ($this->list_opened) {
             for ($i = 1; $i < $this->last_level + 1; $i++) {
@@ -458,7 +476,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function acronym($acronym) {
-        
+        $this->doc .= $this->_latexSpecialChars($acronym);
     }
 
     function smiley($smiley) {
@@ -533,14 +551,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //FIXME keep hash in the end? have to test!
         //FIXME configurable
         if ($this->recursive) {
-            
             //FIXME bacha na nekonecnou rekurzi
             $latexit_level = $this->recursion_level + 1;
             $latexit_headers = $this->headers_level;
             
             $data = p_cached_output(wikifn($link), 'latexit');
             $data = $this->_loadPackages($data);
+            $this->doc .= "\n\n";
+            $this->doc .= "%RECURSIVELY INSERTED FILE START";
+            $this->doc .= "\n\n";
             $this->doc .= $data;
+            $this->doc .= "\n\n";
+            $this->doc .= "%RECURSIVELY INSERTED FILE END";
+            $this->doc .= "\n\n";
+            $this->headers_level -= $this->last_level_increase;
         } else {
             //handle internal links as they were external
             $package = new Package('hyperref');
@@ -619,7 +643,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
-        
+        $pckg = new Package('graphicx');
     }
 
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
@@ -629,7 +653,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function internalmedialink(
     $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
     ) {
-        
+        var_dump($src);
     }
 
     function externalmedialink(
@@ -639,35 +663,89 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function table_open($maxcols = null, $numrows = null, $pos = null) {
-        
+        $this->default_table_align = 'l';
+        $this->table_cols = $maxcols;
+        $this->in_table = true;
+        $pckg = new Package('longtable');
+        $this->_addPackage($pckg);
+        $this->doc .= "\\begin{longtable}{|";
+        for($i = 0; $i < $maxcols; $i++) {
+            $this->doc .= $this->default_table_align."|";
+            //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
+        }
+        $this->doc .= "}\n\hline\n";
     }
 
     function table_close($pos = null) {
-        
+        $this->in_table = false;
+        $this->doc .= "\\end{longtable}\n\n";
     }
 
     function tablerow_open() {
-        
+        $this->cells_count = 0;
     }
 
     function tablerow_close() {
-        
+        $this->doc .= " \\\\ \n";
+        $this->doc .= "\\hline \n";
     }
 
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
+        $this->tablecell_open($colspan,$align,$rowspan);
+        $this->_open('textbf');
         
+        /*FIXME
+         * \endfirsthead: Line(s) to appear as head of the table on the first page
+\endhead: Line(s) to appear at top of every page (except first)
+\endfoot: Last line(s) to appear at the bottom of every page (except last)
+\endlastfoot: Last line(s) to appear at the end of the table
+         */
     }
 
     function tableheader_close() {
-        
+        $this->_close();
+        $this->tablecell_close();
     }
 
     function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
+        if($align == NULL) {
+            $align = $this->default_table_align;
+        } else {
+            $align = substr($align, 0, 1);
+        }
+        $this->last_colspan = $colspan;
+        $this->last_rowspan = $rowspan;
+        $this->last_align = $align;
         
+        if($this->rowspan_handler->getRowspan($this->cells_count) != 0) {
+            $this->doc .= ' & ';
+            $this->rowspan_handler->decreaseRowspan($this->cells_count);
+            $this->cells_count++;
+        }
+        
+        if($colspan != 1 || $align != $this->default_table_align) {
+            $this->doc .= "\\multicolumn{".$colspan."}{|$align|}{";
+        }
+        if ($rowspan != 1) {
+            $pckg = new Package('multirow');
+            $this->_addPackage($pckg);
+            $this->rowspan_handler->insertRowspan($rowspan - 1, $this->cells_count);
+            $this->doc .= "\\multirow{".$rowspan."}{*}{";
+        }
     }
 
     function tablecell_close() {
+        if($this->last_colspan != 1 || $this->last_align != $this->default_table_align) {
+            $this->doc .= "}";
+        }
+        if($this->last_rowspan != 1) {
+            $this->doc .= "}";
+        } 
         
+        $this->cells_count += $this->last_colspan;
+        if($this->table_cols != $this->cells_count) {
+            $this->doc .= " & ";
+        }
     }
 
     /**
@@ -675,7 +753,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param $command The name of a LaTeX command.
      */
     private function _open($command) {
-        $this->doc .= '\\' . $command . '{';
+        $this->doc .= "\\" . $command . "{";
     }
 
     /**
@@ -760,7 +838,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     private function _latexSpecialChars($text) {
-        $text = str_replace(array('\\','&','%','$','#','_','{','}','~','^'), array('\\\\','\&','\%','\$','\#','\_','\{','\}','\~','\^'), $text);
+        $text = str_replace(array('\\','&','%','$','#','_','{','}','~','^','<','>'), array('\\\\','\&','\%','\$','\#','\_','\{','\}','\~','\^','\textless ', '\textgreater '), $text);
         return $text;
     }
 
@@ -771,5 +849,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     
     public function _setRecursive($recursive) {
         $this->recursive = $recursive;
+    }
+    
+    public function _increaseLevel($level) {
+        $this->last_level_increase = $level;
+        $this->headers_level += $level;
     }
 }
