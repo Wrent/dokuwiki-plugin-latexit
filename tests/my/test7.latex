@@ -9,15 +9,23 @@
 
 Text kořenového dokumentu.
 
+%RECURSIVELY INSERTED FILE START
+
 \subsection{Vnořený dokument}
 
 Text vnořeného dokumentu.
+
+%RECURSIVELY INSERTED FILE START
 
 \subsubsection{Vnořený dokument 2}
 
 Text vnořeného dokumentu 2
 
 \sout{deleted}
+
+%RECURSIVELY INSERTED FILE END
+
+%RECURSIVELY INSERTED FILE END
 
 \href{http://localhost/_bp/doku.php?id=test:test7-vnoreny}{Odkaz}
 

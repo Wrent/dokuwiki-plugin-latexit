@@ -51,10 +51,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return 'latex';
     }
 
-    
     public function isSingleton() {
         return false;
     }
+
     /**
      * function is called, when a document is started to being rendered.
      * It adds headers to the LaTeX document and sets the browser headers of the file.
@@ -63,8 +63,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //initialize variables
         global $latexit_level;
         global $latexit_headers;
-       
-        
+
+
         $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
@@ -93,7 +93,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $header = $header_default;
             $this->doc .= $header . $packages . $document_start;
             $this->doc .= "\n\n";
-            
+
             //set the headers, so the browsers knows, this is not the HTML file
             header('Content-Type: application/x-latex');
             header('Content-Disposition: attachment; filename="output.latex";');
@@ -114,6 +114,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $footer_default = "\\end{document}\n";
 
             $this->doc .= $footer_default;
+            $this->_highlightFixme();
         }
         //insert all packages collected during rendering
         $this->_insertPackages();
@@ -135,8 +136,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param type $pos ???
      */
     function header($text, $level, $pos) {
-        
-        if($this->_immersed()) {
+
+        if ($this->_immersed()) {
             $level += $this->headers_level;
         }
         $this->doc .= "\n\n";
@@ -475,7 +476,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //FIXME file, konfigurace?
         $pckg = new Package('listings');
         $this->_addPackage($pckg);
-        if(!is_null($lang)) {
+        if (!is_null($lang)) {
             $this->_open('lstset');
             $this->doc .= 'language=';
             $this->doc .= $this->_latexSpecialChars($lang);
@@ -500,7 +501,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function smiley($smiley) {
-        
+        if ($smiley == 'FIXME') {
+            $pckg = new Package('soul');
+            $this->_addPackage($pckg);
+            $this->doc .= 'FIXME';
+        }
     }
 
     function wordblock($word) {
@@ -538,11 +543,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     // $link like 'SomePage'
     function camelcaselink($link) {
-        $this->internallink($link,$link);
+        $this->internallink($link, $link);
     }
 
     function locallink($hash, $name = NULL) {
-
+        
     }
 
     /**
@@ -557,7 +562,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $ID; //in this global var DokuWiki stores the current page id with namespaces
         global $latexit_level;
         global $latexit_headers;
-        
+
         $title = $this->_latexSpecialChars($title);
 
         $link_original = $link;
@@ -574,7 +579,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             //FIXME bacha na nekonecnou rekurzi
             $latexit_level = $this->recursion_level + 1;
             $latexit_headers = $this->headers_level;
-            
+
             $data = p_cached_output(wikifn($link), 'latexit');
             $data = $this->_loadPackages($data);
             $this->doc .= "\n\n";
@@ -666,16 +671,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{images/}}');
         $this->_addPackage($pckg);
-        $namespaces = explode(':',$src);
-        for($i = 1; $i < count($namespaces);$i++){
-            if($i != 1) {
+        $namespaces = explode(':', $src);
+        for ($i = 1; $i < count($namespaces); $i++) {
+            if ($i != 1) {
                 $path .= "/";
             }
             $path .= $namespaces[$i];
         }
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
         $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
-        $this->doc .= "\includegraphics{".$path."}";
+        $this->doc .= "\includegraphics{" . $path . "}";
     }
 
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
@@ -701,8 +706,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
         $this->doc .= "\\begin{longtable}{|";
-        for($i = 0; $i < $maxcols; $i++) {
-            $this->doc .= $this->default_table_align."|";
+        for ($i = 0; $i < $maxcols; $i++) {
+            $this->doc .= $this->default_table_align . "|";
             //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
         }
         $this->doc .= "}\n\hline\n";
@@ -723,14 +728,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
-        $this->tablecell_open($colspan,$align,$rowspan);
+        $this->tablecell_open($colspan, $align, $rowspan);
         $this->_open('textbf');
-        
-        /*FIXME
+
+        /* FIXME
          * \endfirsthead: Line(s) to appear as head of the table on the first page
-\endhead: Line(s) to appear at top of every page (except first)
-\endfoot: Last line(s) to appear at the bottom of every page (except last)
-\endlastfoot: Last line(s) to appear at the end of the table
+          \endhead: Line(s) to appear at top of every page (except first)
+          \endfoot: Last line(s) to appear at the bottom of every page (except last)
+          \endlastfoot: Last line(s) to appear at the end of the table
          */
     }
 
@@ -740,7 +745,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
-        if($align == NULL) {
+        if ($align == NULL) {
             $align = $this->default_table_align;
         } else {
             $align = substr($align, 0, 1);
@@ -748,34 +753,34 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->last_colspan = $colspan;
         $this->last_rowspan = $rowspan;
         $this->last_align = $align;
-        
-        if($this->rowspan_handler->getRowspan($this->cells_count) != 0) {
+
+        if ($this->rowspan_handler->getRowspan($this->cells_count) != 0) {
             $this->doc .= ' & ';
             $this->rowspan_handler->decreaseRowspan($this->cells_count);
             $this->cells_count++;
         }
-        
-        if($colspan != 1 || $align != $this->default_table_align) {
-            $this->doc .= "\\multicolumn{".$colspan."}{|$align|}{";
+
+        if ($colspan != 1 || $align != $this->default_table_align) {
+            $this->doc .= "\\multicolumn{" . $colspan . "}{|$align|}{";
         }
         if ($rowspan != 1) {
             $pckg = new Package('multirow');
             $this->_addPackage($pckg);
             $this->rowspan_handler->insertRowspan($rowspan - 1, $this->cells_count);
-            $this->doc .= "\\multirow{".$rowspan."}{*}{";
+            $this->doc .= "\\multirow{" . $rowspan . "}{*}{";
         }
     }
 
     function tablecell_close() {
-        if($this->last_colspan != 1 || $this->last_align != $this->default_table_align) {
+        if ($this->last_colspan != 1 || $this->last_align != $this->default_table_align) {
             $this->doc .= "}";
         }
-        if($this->last_rowspan != 1) {
+        if ($this->last_rowspan != 1) {
             $this->doc .= "}";
-        } 
-        
+        }
+
         $this->cells_count += $this->last_colspan;
-        if($this->table_cols != $this->cells_count) {
+        if ($this->table_cols != $this->cells_count) {
             $this->doc .= " & ";
         }
     }
@@ -838,6 +843,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return $data;
     }
 
+    private function _highlightFixme() {
+        $this->doc = str_replace('FIXME', '\hl{FIXME}', $this->doc);
+        $this->doc = preg_replace_callback('#{FIXME}\[(.*?)\]\((.*?)\)#si', array(&$this, '_highlightFixmeHandler'), $this->doc);
+    }
+    
+    private function _highlightFixmeHandler($matches) {
+        $matches[1] = $this->_stripDiacritics($matches[1]);
+        $matches[2] = $this->_stripDiacritics($matches[2]);
+        return '{FIXME['.$matches[1].']('.$matches[2].')}';
+    }
     /**
      * Indents the list given the last seen level.
      */
@@ -871,24 +886,115 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     private function _latexSpecialChars($text) {
-        $text = str_replace(array('\\','{','}','&','%','$','#','_','~','^','<','>'), array('\textbackslash','\{','\}','\&','\%','\$','\#','\_','\textasciitilde{}','\textasciicircum{}','\textless ', '\textgreater '), $text);
+        $text = str_replace(array('\\', '{', '}', '&', '%', '$', '#', '_', '~', '^', '<', '>'), array('\textbackslash', '\{', '\}', '\&', '\%', '\$', '\#', '\_', '\textasciitilde{}', '\textasciicircum{}', '\textless ', '\textgreater '), $text);
         $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
-        /*$text = str_replace('$', '\$', $text);
-        $text = str_replace('\\$\\backslash\\\\$', '$\backslash$', $text);*/
+        /* $text = str_replace('$', '\$', $text);
+          $text = str_replace('\\$\\backslash\\\\$', '$\backslash$', $text); */
         return $text;
     }
 
     private function _checkLinkRecursion($text) {
         return preg_match('#~~~LINK-RECURSION~~~#si', $text);
     }
-    
-    
+
     public function _setRecursive($recursive) {
         $this->recursive = $recursive;
     }
-    
+
     public function _increaseLevel($level) {
         $this->last_level_increase = $level;
         $this->headers_level += $level;
     }
+
+    private function _stripDiacritics($data) {
+        $table = Array(
+            'ä' => 'a',
+            'Ä' => 'A',
+            'á' => 'a',
+            'Á' => 'A',
+            'à' => 'a',
+            'À' => 'A',
+            'ã' => 'a',
+            'Ã' => 'A',
+            'â' => 'a',
+            'Â' => 'A',
+            'č' => 'c',
+            'Č' => 'C',
+            'ć' => 'c',
+            'Ć' => 'C',
+            'ď' => 'd',
+            'Ď' => 'D',
+            'ě' => 'e',
+            'Ě' => 'E',
+            'é' => 'e',
+            'É' => 'E',
+            'ë' => 'e',
+            'Ë' => 'E',
+            'è' => 'e',
+            'È' => 'E',
+            'ê' => 'e',
+            'Ê' => 'E',
+            'í' => 'i',
+            'Í' => 'I',
+            'ï' => 'i',
+            'Ï' => 'I',
+            'ì' => 'i',
+            'Ì' => 'I',
+            'î' => 'i',
+            'Î' => 'I',
+            'ľ' => 'l',
+            'Ľ' => 'L',
+            'ĺ' => 'l',
+            'Ĺ' => 'L',
+            'ń' => 'n',
+            'Ń' => 'N',
+            'ň' => 'n',
+            'Ň' => 'N',
+            'ñ' => 'n',
+            'Ñ' => 'N',
+            'ó' => 'o',
+            'Ó' => 'O',
+            'ö' => 'o',
+            'Ö' => 'O',
+            'ô' => 'o',
+            'Ô' => 'O',
+            'ò' => 'o',
+            'Ò' => 'O',
+            'õ' => 'o',
+            'Õ' => 'O',
+            'ő' => 'o',
+            'Ő' => 'O',
+            'ř' => 'r',
+            'Ř' => 'R',
+            'ŕ' => 'r',
+            'Ŕ' => 'R',
+            'š' => 's',
+            'Š' => 'S',
+            'ś' => 's',
+            'Ś' => 'S',
+            'ť' => 't',
+            'Ť' => 'T',
+            'ú' => 'u',
+            'Ú' => 'U',
+            'ů' => 'u',
+            'Ů' => 'U',
+            'ü' => 'u',
+            'Ü' => 'U',
+            'ù' => 'u',
+            'Ù' => 'U',
+            'ũ' => 'u',
+            'Ũ' => 'U',
+            'û' => 'u',
+            'Û' => 'U',
+            'ý' => 'y',
+            'Ý' => 'Y',
+            'ž' => 'z',
+            'Ž' => 'Z',
+            'ź' => 'z',
+            'Ź' => 'Z'
+        );
+
+        return strtr($data, $table);
+    }
+
 }

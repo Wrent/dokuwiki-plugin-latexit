@@ -1,0 +1,12 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{soul}
+\begin{document}
+
+\hl{FIXME}
+
+
+\hl{FIXME[AK](test case)}
+
+\end{document}

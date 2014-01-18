@@ -1,0 +1,37 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{listings}
+\begin{document}
+
+
+
+\lstset{language=java}
+\begin{lstlisting}
+/**
+ * The HelloWorldApp class implements an application that
+ * simply displays "Hello World!" to the standard output.
+ */
+class HelloWorldApp {
+    public static void main(String[] args) {
+        System.out.println("Hello World!"); //Display the string.
+    }
+}
+\end{lstlisting}
+
+
+
+\lstset{language=pascal}
+\begin{lstlisting}
+
+for i:=maxint to 0 do
+begin
+{ do nothing }
+end;
+Write('Case insensitive');
+Write('Pascal keywords.');
+\end{lstlisting}
+
+
+
+\end{document}
