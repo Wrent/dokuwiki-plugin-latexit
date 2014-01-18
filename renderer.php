@@ -436,7 +436,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function unformatted($text) {
-        
+        $this->doc .= $this->_latexSpecialChars($text);
     }
 
     function php($text) {
