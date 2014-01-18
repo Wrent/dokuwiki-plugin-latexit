@@ -472,7 +472,27 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function code($text, $lang = null, $file = null) {
-        
+        //FIXME file, konfigurace?
+        $pckg = new Package('listings');
+        $this->_addPackage($pckg);
+        if(!is_null($lang)) {
+            $this->_open('lstset');
+            $this->doc .= 'language=';
+            $this->doc .= $this->_latexSpecialChars($lang);
+            $this->_close();
+            $this->doc .= "\n";
+        }
+        $this->_open('begin');
+        $this->doc .= 'lstlisting';
+        $this->_close();
+        $this->doc .= "\n";
+        $text = str_replace('”', '"', $text);
+        $text = str_replace('–', '-', $text);
+        $this->doc .= $text;
+        $this->_open('end');
+        $this->doc .= 'lstlisting';
+        $this->_close();
+        $this->doc .= "\n\n";
     }
 
     function acronym($acronym) {
