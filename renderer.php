@@ -851,7 +851,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     private function _latexSpecialChars($text) {
-        $text = str_replace(array('\\','&','%','$','#','_','{','}','~','^','<','>'), array('\\\\','\&','\%','\$','\#','\_','\{','\}','\~','\^','\textless ', '\textgreater '), $text);
+        $text = str_replace(array('\\','{','}','&','%','$','#','_','~','^','<','>'), array('\textbackslash','\{','\}','\&','\%','\$','\#','\_','\textasciitilde{}','\textasciicircum{}','\textless ', '\textgreater '), $text);
+        $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
+        /*$text = str_replace('$', '\$', $text);
+        $text = str_replace('\\$\\backslash\\\\$', '$\backslash$', $text);*/
         return $text;
     }
 
