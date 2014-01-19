@@ -95,7 +95,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
             //set the headers, so the browsers knows, this is not the HTML file
             header('Content-Type: application/x-latex');
-            $filename = "output".time().".latex";
+            $filename = "output" . time() . ".latex";
             header("Content-Disposition: attachment; filename='$filename';");
         } else {
             $this->doc .= '~~~PACKAGES-START~~~';
@@ -115,6 +115,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
             $this->doc .= $footer_default;
             $this->_highlightFixme();
+            $this->_removeEntities();
         }
         //insert all packages collected during rendering
         $this->_insertPackages();
@@ -514,32 +515,63 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function entity($entity) {
-        
+        //FIXME https://www.dokuwiki.org/wiki:syntax
+        $this->doc .= '///ENTITYSTART///';
+        switch ($entity) {
+            case '->':
+                $this->doc .= '$\rightarrow$';
+                break;
+            case '<-':
+                $this->doc .= '$\leftarrow$';
+                break;
+            case '<->':
+                $this->doc .= '$\leftrightarrow$';
+                break;
+            case '=>':
+                $this->doc .= '$\Rightarrow$';
+                break;
+            case '<=':
+                $this->doc .= '$\Leftarrow$';
+                break;
+            case '<=>':
+                $this->doc .= '$\Leftrightarrow$';
+                break;
+            default:
+                $this->doc .= $this->_latexSpecialChars($entity);
+                break;
+        }
+        $this->doc .= '///ENTITYEND///';
     }
 
     // 640x480 ($x=640, $y=480)
     function multiplyentity($x, $y) {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     function singlequoteopening() {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     function singlequoteclosing() {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     function apostrophe() {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     function doublequoteopening() {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     function doublequoteclosing() {
-        
+        //FIXME
+        $this->doc .= $this->_latexSpecialChars($entity);
     }
 
     // $link like 'SomePage'
@@ -848,12 +880,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc = str_replace('FIXME', '\hl{FIXME}', $this->doc);
         $this->doc = preg_replace_callback('#{FIXME}\[(.*?)\]\((.*?)\)#si', array(&$this, '_highlightFixmeHandler'), $this->doc);
     }
-    
+
     private function _highlightFixmeHandler($matches) {
         $matches[1] = $this->_stripDiacritics($matches[1]);
         $matches[2] = $this->_stripDiacritics($matches[2]);
-        return '{FIXME['.$matches[1].']('.$matches[2].')}';
+        return '{FIXME[' . $matches[1] . '](' . $matches[2] . ')}';
     }
+
     /**
      * Indents the list given the last seen level.
      */
@@ -887,12 +920,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     private function _latexSpecialChars($text) {
+        preg_match('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $text, $entity);
         $text = str_replace(array('\\', '{', '}', '&', '%', '$', '#', '_', '~', '^', '<', '>'), array('\textbackslash', '\{', '\}', '\&', '\%', '\$', '\#', '\_', '\textasciitilde{}', '\textasciicircum{}', '\textless ', '\textgreater '), $text);
         $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
         /* $text = str_replace('$', '\$', $text);
           $text = str_replace('\\$\\backslash\\\\$', '$\backslash$', $text); */
+        $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $entity[1], $text);
         return $text;
     }
+
+    private function _removeEntities() {
+        $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
+    }
+
 
     private function _checkLinkRecursion($text) {
         return preg_match('#~~~LINK-RECURSION~~~#si', $text);
@@ -907,6 +947,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->headers_level += $level;
     }
 
+    public function _mathMode($data) {
+        //FIXME toto je ale proti zasadam latexu
+        $data = str_replace('->', '\rightarrow', $data);
+        $data = str_replace('<-', '\leftarrow', $data);
+        $data = str_replace('<->', '\leftrightarrow', $data);
+        $data = str_replace('=>', '\Rightarrow', $data);
+        $data = str_replace('<=', '\Leftarrow', $data);
+        $data = str_replace('<=>', '\Leftrightarrow', $data);
+        $data = str_replace('...', '\ldots', $data);
+        
+        $this->doc .= $data;
+    }
+    
     private function _stripDiacritics($data) {
         $table = Array(
             'ä' => 'a',

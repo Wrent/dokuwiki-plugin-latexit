@@ -25,6 +25,7 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
 
 
     public function _purgecache(Doku_Event &$event, $param) {
+        //FIXME purge only latex cache
         if($event->data->mode == 'latexit') {
             touch(DOKU_INC . 'conf/local.php');
         }      
