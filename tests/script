@@ -1,5 +1,4 @@
 #! /bin/bash
-touch /media/Data/web/www/_bp/conf/local.php
 echo '' > log
 for ((i = $1; i <= $2; i++)); do
    URL=http://localhost/_bp/doku.php?id=test:test

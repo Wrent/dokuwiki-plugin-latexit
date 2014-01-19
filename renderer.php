@@ -64,7 +64,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $latexit_level;
         global $latexit_headers;
 
-
         $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
@@ -96,7 +95,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
             //set the headers, so the browsers knows, this is not the HTML file
             header('Content-Type: application/x-latex');
-            header('Content-Disposition: attachment; filename="output.latex";');
+            $filename = "output".time().".latex";
+            header("Content-Disposition: attachment; filename='$filename';");
         } else {
             $this->doc .= '~~~PACKAGES-START~~~';
             $this->doc .= '~~~PACKAGES~~~';
@@ -501,6 +501,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function smiley($smiley) {
+        //FIXME other smileys a odstraneni diakritiky
         if ($smiley == 'FIXME') {
             $pckg = new Package('soul');
             $this->_addPackage($pckg);

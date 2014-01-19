@@ -20,19 +20,14 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
      */
     public function register(Doku_Event_Handler &$controller) {
 
-        $controller->register_hook('ACTION_ACT_PREPROCESS', 'FIXME', $this, 'handle_action_act_preprocess');
+        $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgecache');
     }
 
-    /**
-     * [Custom event handler which performs action]
-     *
-     * @param Doku_Event $event  event object by reference
-     * @param mixed      $param  [the parameters passed as fifth argument to register_hook() when this
-     *                           handler was registered]
-     * @return void
-     */
-    public function handle_action_act_preprocess(Doku_Event &$event, $param) {
-        
+
+    public function _purgecache(Doku_Event &$event, $param) {
+        if($event->data->mode == 'latexit') {
+            touch(DOKU_INC . 'conf/local.php');
+        }      
     }
 
 }
