@@ -946,6 +946,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     private function _removeEntities() {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
+        
+        //FIXME - this has to be changed in imagereference plugin - just a walkaround
+        $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
     }
 
 
