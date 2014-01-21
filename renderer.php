@@ -969,6 +969,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $data = str_replace('<=', '\Leftarrow', $data);
         $data = str_replace('<=>', '\Leftrightarrow', $data);
         $data = str_replace('...', '\ldots', $data);
+        $data = str_replace('−', '-', $data);
         
         $this->doc .= $data;
     }
