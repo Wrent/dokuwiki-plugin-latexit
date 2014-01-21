@@ -10,6 +10,9 @@
 if (!defined('DOKU_INC'))
     die();
 
+
+require_once DOKU_INC . 'inc/pluginutils.php';
+
 class action_plugin_latexit extends DokuWiki_Action_Plugin {
 
     /**
@@ -20,15 +23,22 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
      */
     public function register(Doku_Event_Handler &$controller) {
 
-        $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgecache');
+        $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgeCache');
+        $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, '_setLatexitSort');
     }
 
-
-    public function _purgecache(Doku_Event &$event, $param) {
+    public function _purgeCache(Doku_Event &$event, $param) {
         //FIXME purge only latex cache
-        if($event->data->mode == 'latexit') {
+        if ($event->data->mode == 'latexit') {
             touch(DOKU_INC . 'conf/local.php');
-        }      
+        }
+    }
+
+    public function _setLatexitSort(Doku_Event &$event, $param) {
+        if ($event->data == 'export_latexit') {
+            $syntax_plugin = plugin_load('syntax', 'latexit');
+            $syntax_plugin->_setSort(1);
+        }
     }
 
 }

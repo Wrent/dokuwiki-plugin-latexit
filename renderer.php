@@ -15,6 +15,7 @@ require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 require_once DOKU_INC . 'inc/parserutils.php';
 require_once DOKU_INC . 'inc/pageutils.php';
+require_once DOKU_INC . 'inc/pluginutils.php';
 
 class renderer_plugin_latexit extends Doku_Renderer {
 
@@ -63,7 +64,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //initialize variables
         global $latexit_level;
         global $latexit_headers;
-
+    
         $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
@@ -117,9 +118,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->doc .= $footer_default;
             $this->_highlightFixme();
             $this->_removeEntities();
+            $syntax_plugin = plugin_load('syntax', 'latexit');
+            $syntax_plugin->_setSort(245);
         }
         //insert all packages collected during rendering
-        $this->_insertPackages();
+        $this->_insertPackages();      
     }
 
     function render_TOC() {

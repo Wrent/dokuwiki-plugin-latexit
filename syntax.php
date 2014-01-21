@@ -12,6 +12,7 @@ if (!defined('DOKU_INC'))
 
 class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
 
+    private $sort;
     /**
      * @return string Syntax mode type
      */
@@ -23,7 +24,11 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return int Sort order - Low numbers go before high numbers
      */
     public function getSort() {
-        return 295;
+        if(!isset($this->sort)) {
+            return 245;
+        } else {        
+             return $this->sort;
+        }
     }
 
     /**
@@ -34,10 +39,11 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
     public function connectTo($mode) {
         //FIXME jenom 2-6 vlnek?
         $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
+        $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
     }
-    
+
     public function isSingleton() {
-        return false;
+        return true;
     }
 
     /**
@@ -50,10 +56,16 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return array Data for the renderer
      */
     public function handle($match, $state, $pos, &$handler) {
-         $tildas = explode('RECURSIVE',$match);
-         if($tildas[0] == $tildas[1]){
-             return array($state, $tildas);
-         }
+        if (preg_match("/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/", $match, $matches)) {
+            $pageRef = $matches[2];
+            $citeKey = $matches[3];
+            return $citeKey;
+        } elseif (preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $match)) {
+            $tildas = explode('RECURSIVE', $match);
+            if ($tildas[0] == $tildas[1]) {
+                return array($state, $tildas);
+            }
+        }
         return array();
     }
 
@@ -66,19 +78,29 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, &$renderer, $data) {
-        $level = -1*strlen($data[1][0]) + 7;
+        $level = -1 * strlen($data[1][0]) + 7;
         if ($mode == 'xhtml') {
             //6 = 1, 5=2,4=3,3=4,2=5
-            $renderer->doc .= '<h'.$level.'>Next link recursively inserted</h'.$level.'>';
+            if (is_array($data)) {
+                $renderer->doc .= '<h' . $level . '>Next link recursively inserted</h' . $level . '>';
+            }
             return true;
         } elseif ($mode == 'latex') {
-            //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
-            $renderer->_setRecursive(true);
-            $renderer->_increaseLevel($level - 1);
+            if (is_array($data)) {
+                //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
+                $renderer->_setRecursive(true);
+                $renderer->_increaseLevel($level - 1);
+            } else {
+                $renderer->doc .= '\\cite{'.$data.'}';
+            }
             return true;
         }
 
         return false;
+    }
+    
+    public function _setSort($sort) {
+        $this->sort = $sort;
     }
 
 }
