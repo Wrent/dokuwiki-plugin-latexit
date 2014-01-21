@@ -575,13 +575,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     function doublequoteopening() {
         //FIXME  jine jazyky
-        $this->doc .= '\\uv{';
+        $this->doc .= ',,';
+        //$this->doc .= '\\uv{';
         //english ``
     }
 
     function doublequoteclosing() {
         //FIXME  jine jazyky
-        $this->doc .= '}';
+        $this->doc .= '"';
+        //$this->doc .= '}';
         //english "
     }
 
