@@ -80,12 +80,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             $this->headers_level = $latexit_headers;
         }
-
+        //FIXME hlavni title?
         if (!$this->_immersed()) {
             //this is default LaTeX header right now, can be changed in configuration
-            $header_default = "\\documentclass[a4paper, 11pt]{article}\n"
+            $header_default = "\\documentclass[a4paper, oneside, 10pt]{memoir}\n"
                     . "\\usepackage[utf8x]{inputenc}\n"
-                    . "\\usepackage[czech]{babel}\n";
+                    . "\\usepackage[table]{xcolor}\n"
+                    . "\\usepackage{czech}\n";
             $packages = '~~~PACKAGES~~~';
             $document_start = "\\begin{document}";
             //FIXME if conf
@@ -867,6 +868,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if ($this->_immersed()) {
             $packages = serialize($this->packages);
         } else {
+            //FIXME slucovat balicky bez parametru
             foreach ($this->packages as $package) {
                 $param = $this->_latexSpecialChars($package->printParameters());
                 $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
