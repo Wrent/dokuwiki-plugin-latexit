@@ -1,0 +1,11 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[czech]{babel}
+\begin{document}
+
+
+
+$\rightarrow$ $\leftarrow$ $\leftrightarrow$ $\Rightarrow$ $\Leftarrow$ $\Leftrightarrow$ \textgreater \textgreater  \textless \textless  -- ---  \copyright  \texttrademark  \textregistered 
+\uv{He thought 'It's a man's world'...}
+
+\end{document}

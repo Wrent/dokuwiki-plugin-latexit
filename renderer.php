@@ -536,6 +536,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
             case '<=>':
                 $this->doc .= '$\Leftrightarrow$';
                 break;
+            case '(c)':
+                $this->doc .= '\copyright ';
+                break;
+            case '(tm)':
+                $this->doc .= '\texttrademark ';
+                break;
+            case '(r)':
+                $this->doc .= '\textregistered ';
+                break;
             default:
                 $this->doc .= $this->_latexSpecialChars($entity);
                 break;
@@ -551,27 +560,29 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     function singlequoteopening() {
         //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        $this->doc .= '`';
     }
 
     function singlequoteclosing() {
         //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        $this->doc .= '\'';
     }
 
     function apostrophe() {
         //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        $this->doc .= '\'';
     }
 
     function doublequoteopening() {
-        //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        //FIXME  jine jazyky
+        $this->doc .= '\\uv{';
+        //english ``
     }
 
     function doublequoteclosing() {
-        //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        //FIXME  jine jazyky
+        $this->doc .= '}';
+        //english "
     }
 
     // $link like 'SomePage'
