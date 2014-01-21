@@ -949,6 +949,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
         //FIXME - this has to be changed in imagereference plugin - just a walkaround
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
+        $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
     }
 
 
