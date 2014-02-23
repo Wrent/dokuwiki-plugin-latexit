@@ -25,6 +25,7 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
 
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgeCache');
         $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, '_setLatexitSort');
+        $controller->register_hook('INIT_LANG_LOAD', 'BEFORE', $this, '_setLatexitSort2');
     }
 
     public function _purgeCache(Doku_Event &$event, $param) {
@@ -36,6 +37,13 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
 
     public function _setLatexitSort(Doku_Event &$event, $param) {
         if ($event->data == 'export_latexit') {
+            $syntax_plugin = plugin_load('syntax', 'latexit');
+            $syntax_plugin->_setSort(1);
+        }
+    }
+    
+    public function _setLatexitSort2(Doku_Event &$event, $param) {
+        if (isset($_GET['do']) && $_GET['do'] == 'export_latexit') {
             $syntax_plugin = plugin_load('syntax', 'latexit');
             $syntax_plugin->_setSort(1);
         }

@@ -1,6 +1,7 @@
-\documentclass[a4paper, 11pt]{article}
+\documentclass[a4paper, oneside, 10pt]{memoir}
 \usepackage[utf8x]{inputenc}
-\usepackage[czech]{babel}
+\usepackage[table]{xcolor}
+\usepackage{czech}
 \begin{document}
 
 \begin{itemize}

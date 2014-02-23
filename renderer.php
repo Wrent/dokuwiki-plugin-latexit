@@ -10,29 +10,106 @@
 if (!defined('DOKU_INC'))
     die();
 
-require_once DOKU_INC . 'inc/parser/xhtml.php';
+/**
+ * Latexit plugin extends class in this file
+ */
+require_once DOKU_INC . 'inc/parser/renderer.php';
+
+/**
+ * includes additional plugin classes
+ */
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
+
+/**
+ * includes default DocuWiki files containing functions used by latexit plugin
+ */
 require_once DOKU_INC . 'inc/parserutils.php';
 require_once DOKU_INC . 'inc/pageutils.php';
 require_once DOKU_INC . 'inc/pluginutils.php';
 
+/**
+ * Main latexit class, specifies how will be latex rendered
+ */
 class renderer_plugin_latexit extends Doku_Renderer {
 
+    /**
+     * stores all required LaTeX packages
+     * @var array 
+     */
     private $packages;
+    /**
+     * Stores the information about last list level
+     * @var int
+     */
     private $last_level;
+    /**
+     * Is true when the renderer is in a list
+     * @var boolean
+     */
     private $list_opened;
+    /**
+     * Stores the information about the level of recursion.
+     * It stores the depth of current recusively added file.
+     * @var int
+     */
     private $recursion_level;
+    /**
+     * Used in recursively inserted files, stores information about headers level.
+     * @var int
+     */
     private $headers_level;
+    /**
+     * FIXME configurable
+     * Is TRUE when recursive inserting should be used.
+     * @var bool
+     */
     private $recursive;
+    /**
+     * Stores the information about the headers level increase in last recursive insertion.
+     * @var int
+     */
     private $last_level_increase;
+    /**
+     * Stores the information about the number of cells found in a table row.
+     * @var int
+     */
     private $cells_count;
+    /**
+     * Stores the information about the number a table cols.
+     * @var int
+     */
     private $table_cols;
+    /**
+     * Stores the last colspan in a table.
+     * @var int
+     */
     private $last_colspan;
+    /**
+     * Stores the last rowspan in a table.
+     * @var int
+     */
     private $last_rowspan;
+    /**
+     * Stores the last align of a cell in a table.
+     * @var int
+     */
     private $last_align;
+    /**
+     * Is TRUE when renderer is inside a table.
+     * @var bool
+     */
     private $in_table;
+    /**
+     * FIXME conf
+     * Stores the default table align
+     * @var string
+     */
     private $default_table_align;
+    /**
+     * An instance of a RowspanHandler class.
+     * @var RowspanHandler
+     */
     private $rowspan_handler;
 
     /**
