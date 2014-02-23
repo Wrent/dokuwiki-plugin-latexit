@@ -123,31 +123,36 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Return the rendering format of the renderer
+     * Return the rendering format of the renderer - latex
      */
     public function getFormat() {
         return 'latex';
     }
-
+    /**
+     * Renderer is always created as a new instance.
+     */
     public function isSingleton() {
         return false;
     }
 
     /**
      * function is called, when a document is started to being rendered.
-     * It adds headers to the LaTeX document and sets the browser headers of the file.
+     * It inicializes variables, adds headers to the LaTeX document and
+     * sets the browser headers of the exported file.
      */
     function document_start() {
-        //initialize variables
+        //register global variables used for recursive rendering
         global $latexit_level;
         global $latexit_headers;
     
+        //initialize variables
         $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
         $this->in_table = FALSE;
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
+        
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
         } else {
@@ -158,14 +163,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             $this->headers_level = $latexit_headers;
         }
-        //FIXME hlavni title?
+        
+        //FIXME nastavit nejak hlavni title dokumentu podle title stranky?
+        
+        //this tag will be replaced in the end, all required packages will be added
+        $packages = '~~~PACKAGES~~~';
         if (!$this->_immersed()) {
+            //document is MAIN PAGE of exported file
             //this is default LaTeX header right now, can be changed in configuration
             $header_default = "\\documentclass[a4paper, oneside, 10pt]{memoir}\n"
                     . "\\usepackage[utf8x]{inputenc}\n"
                     . "\\usepackage[table]{xcolor}\n"
                     . "\\usepackage{czech}\n";
-            $packages = '~~~PACKAGES~~~';
+            
             $document_start = "\\begin{document}";
             //FIXME if conf
             $header = $header_default;
@@ -177,8 +187,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $filename = "output" . time() . ".latex";
             header("Content-Disposition: attachment; filename='$filename';");
         } else {
+            //document is RECURSIVELY added file to another file
             $this->doc .= '~~~PACKAGES-START~~~';
-            $this->doc .= '~~~PACKAGES~~~';
+            $this->doc .= $packages;
             $this->doc .= '~~~PACKAGES-END~~~';
         }
     }
@@ -189,23 +200,26 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function document_end() {
         if (!$this->_immersed()) {
+            //this is MAIN PAGE of exported file, we can finalize document
             $this->doc .= "\n\n";
             $footer_default = "\\end{document}\n";
-
+            //FIXME if conf footer
             $this->doc .= $footer_default;
+            
+            //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
-            $syntax_plugin = plugin_load('syntax', 'latexit');
-            $syntax_plugin->_setSort(245);
         }
-        //insert all packages collected during rendering
+        //insert all packages collected during rendering as \usepackage
         $this->_insertPackages();      
     }
 
+    //FIXME muze vlozit latex obsah, ale nejspis jen podle nastaveni v konfiguraci
     function render_TOC() {
         return '';
     }
 
+    //FIXME
     function toc_additem($id, $text, $level) {
         
     }
@@ -215,15 +229,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls the LaTeX command for an appropriate level.
      * @param type $text Text of the header
      * @param type $level Level of the header.
-     * @param type $pos ???
+     * @param type $pos Not used in LaTeX
      */
     function header($text, $level, $pos) {
 
         if ($this->_immersed()) {
+            //when document is recursively inserted, it will continue from previous headers level
             $level += $this->headers_level;
         }
         $this->doc .= "\n\n";
         switch ($level) {
+            //FIXME zakladni level headeru bude konfigurovatelny a bude odpovidat typu dokumentu
             case 1:
                 $this->_header('section', $text);
                 break;
@@ -247,10 +263,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    //FIXME co to dela?
     function section_open($level) {
         
     }
 
+    //FIXME co to dela?
     function section_close() {
         
     }
@@ -272,12 +290,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\n\n";
     }
 
-    /**
-     * Function is called, when renderer finds the end of a paragraph.
-     */
-    function p_close() {
-        //there is nothing done with that in LaTeX
-    }
 
     /**
      * Function is called, when renderer finds a linebreak.
@@ -285,12 +297,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function linebreak() {
         if ($this->in_table) {
+            //in tables in LaTeX there is different syntax
             $this->doc .= "\\newline ";
         } else {
             $this->doc .= "\\\\";
         }
     }
 
+    //FIXME
     function hr() {
         
     }
