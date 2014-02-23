@@ -6,10 +6,26 @@
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Adam Kučera <adam.kucera@wrent.cz>
  */
+
+/**
+ * Class representing a LaTeX package.
+ */
 class Package {
 
+    /**
+     * Name of the LaTeX package.
+     * @var string 
+     */
     private $name;
+    /**
+     * Array of the package parameters.
+     * @var array of strings 
+     */
     private $parameters;
+    /**
+     * Array of commands called after inserting the package.
+     * @var array of strings
+     */
     private $commands;
 
     /**
@@ -34,6 +50,10 @@ class Package {
         }
     }
     
+    /**
+     * Adds new command to the package and prevents duplicates.
+     * @param $command Command.
+     */
     public function addCommand($command) {
         if (!in_array($command, $this->commands)) {
             $this->commands[] = $command;
@@ -56,6 +76,10 @@ class Package {
         }
     }
     
+    /**
+     * Prints all commands, each on new line.
+     * @return String Text of commands.
+     */
     public function printCommands() {
         if (count($this->commands > 0)) {
             foreach ($this->commands as $c) {
@@ -67,6 +91,10 @@ class Package {
         }
     }
 
+    /**
+     * Returns the name of the package.
+     * @return string Name of the package.
+     */
     public function getName() {
         return $this->name;
     }

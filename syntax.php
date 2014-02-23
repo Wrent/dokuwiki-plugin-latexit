@@ -10,9 +10,17 @@
 if (!defined('DOKU_INC'))
     die();
 
+/**
+ * Syntax component handels all substitutions and new DW commands in original text.
+ */
 class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
 
+    /**
+     * Order in which this Syntax plugin will be called.
+     * @var int 
+     */
     private $sort;
+
     /**
      * @return string Syntax mode type
      */
@@ -24,10 +32,10 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return int Sort order - Low numbers go before high numbers
      */
     public function getSort() {
-        if(!isset($this->sort)) {
+        if (!isset($this->sort)) {
             return 245;
-        } else {        
-             return $this->sort;
+        } else {
+            return $this->sort;
         }
     }
 
@@ -42,6 +50,11 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
         $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
     }
 
+    /**
+     * This syntax plugin should be used as a singleton.
+     * (so it can change its sort, when latex will be rendered)
+     * @return boolean
+     */
     public function isSingleton() {
         return true;
     }
@@ -56,11 +69,13 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return array Data for the renderer
      */
     public function handle($match, $state, $pos, &$handler) {
+        //parse citations from the text (this will be done by this plugin only for latex export)
         if (preg_match("/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/", $match, $matches)) {
             $pageRef = $matches[2];
             $citeKey = $matches[3];
             return $citeKey;
-        } elseif (preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $match)) {
+        } //parse RECURSIVE command
+        elseif (preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $match)) {
             $tildas = explode('RECURSIVE', $match);
             if ($tildas[0] == $tildas[1]) {
                 return array($state, $tildas);
@@ -78,27 +93,36 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, &$renderer, $data) {
+        //this will count the level of an following header according to number of ~ used
         $level = -1 * strlen($data[1][0]) + 7;
         if ($mode == 'xhtml') {
-            //6 = 1, 5=2,4=3,3=4,2=5
             if (is_array($data)) {
                 $renderer->doc .= '<h' . $level . '>Next link recursively inserted</h' . $level . '>';
             }
             return true;
         } elseif ($mode == 'latex') {
+            //set the next link to be added recursively
             if (is_array($data)) {
-                //FIXME co kdyz bude latex generovat i neco jineho? nemam se radeji prejmenovat format na latexit?
-                $renderer->_setRecursive(true);
-                $renderer->_increaseLevel($level - 1);
-            } else {
-                $renderer->doc .= '\\cite{'.$data.'}';
+                //there might be more plugins rendering latex and calling this functions could cause an error
+                if (method_exists($renderer, '_setRecursive')) {
+                    $renderer->_setRecursive(true);
+                    $renderer->_increaseLevel($level - 1);
+                }
+            }
+            //insert citation
+            else {
+                $renderer->doc .= '\\cite{' . $data . '}';
             }
             return true;
         }
 
         return false;
     }
-    
+
+    /**
+     * Set sort order of the syntax component
+     * @param int $sort Sort order.
+     */
     public function _setSort($sort) {
         $this->sort = $sort;
     }

@@ -876,7 +876,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\\begin{longtable}{|";
         for ($i = 0; $i < $maxcols; $i++) {
             $this->doc .= $this->default_table_align . "|";
-            }
+        }
         $this->doc .= "}\n\hline\n";
     }
 
@@ -892,21 +892,36 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\\end{longtable}\n\n";
     }
 
+    /**
+     * Function is called at start of every row in a table.
+     */
     function tablerow_open() {
         //set the number of cells printed
         $this->cells_count = 0;
     }
 
+    /**
+     * Function is called at the end of every row in a table
+     */
     function tablerow_close() {
+        //add syntax for end of a row
         $this->doc .= " \\\\ \n";
+        //add line
         $this->doc .= "\\hline \n";
     }
 
+    /**
+     * Function is called when the header row is reached.
+     * It just prints regular row in bold.
+     * @param type $colspan
+     * @param type $align
+     * @param type $rowspan
+     */
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
         $this->tablecell_open($colspan, $align, $rowspan);
         $this->_open('textbf');
 
-        /* FIXME
+        /* FIXME poresit zobrazovani techto nasledujicich prikazu
          * \endfirsthead: Line(s) to appear as head of the table on the first page
           \endhead: Line(s) to appear at top of every page (except first)
           \endfoot: Last line(s) to appear at the bottom of every page (except last)
@@ -914,30 +929,44 @@ class renderer_plugin_latexit extends Doku_Renderer {
          */
     }
 
+    /**
+     * Function is called at the end of the header row.
+     */
     function tableheader_close() {
         $this->_close();
         $this->tablecell_close();
     }
 
+    /**
+     * Function handling exporting of each cell in a table.
+     * @param int $colspan Sets collspan of the cell.
+     * @param string $align Sets align of the cell. 
+     * @param int $rowspan Sets rows[am of the cell.
+     */
     function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
         if ($align == NULL) {
             $align = $this->default_table_align;
         } else {
+            //in DW align is left, right, center, in LaTeX just first letter
             $align = substr($align, 0, 1);
         }
+        //if anything is not standard, we will have to use different closing of a cell
         $this->last_colspan = $colspan;
         $this->last_rowspan = $rowspan;
         $this->last_align = $align;
 
+        //RowspanHandler stores information about the number of cells to be rowspanned
         if ($this->rowspan_handler->getRowspan($this->cells_count) != 0) {
             $this->doc .= ' & ';
             $this->rowspan_handler->decreaseRowspan($this->cells_count);
             $this->cells_count++;
         }
 
+        //colspan or not default align
         if ($colspan != 1 || $align != $this->default_table_align) {
             $this->doc .= "\\multicolumn{" . $colspan . "}{|$align|}{";
         }
+        //start a new rowspan using RowspanHandler
         if ($rowspan != 1) {
             $pckg = new Package('multirow');
             $this->_addPackage($pckg);
@@ -946,14 +975,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    /**
+     * Function is called at the end of every cell.
+     */
     function tablecell_close() {
+        //colspan or align different from default has been set in this cell
         if ($this->last_colspan != 1 || $this->last_align != $this->default_table_align) {
             $this->doc .= "}";
         }
+        //rowspan has been set in this cell
         if ($this->last_rowspan != 1) {
             $this->doc .= "}";
         }
 
+        //are there any cells left in this row?
         $this->cells_count += $this->last_colspan;
         if ($this->table_cols != $this->cells_count) {
             $this->doc .= " & ";
@@ -970,7 +1005,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Closing tag of all LaTeX commands is always same and will be called
-     * in almost every _close function.
+     * in almost every close function.
      */
     private function _close() {
         $this->doc .= '}';
@@ -993,19 +1028,56 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Inserts all packages collected during the rendering to the head of the document.
      */
     private function _insertPackages() {
+        //if the page is recursively inserted, packages will have to be added to the parent document
+        //they are serilized in the exported subfile
         if ($this->_immersed()) {
             $packages = serialize($this->packages);
         } else {
-            //FIXME slucovat balicky bez parametru
+            //FIXME slucovat balicky bez parametru - nejdriv ty s parametry, pak ty bez nich
             foreach ($this->packages as $package) {
                 $param = $this->_latexSpecialChars($package->printParameters());
                 $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
                 $packages .= $package->printCommands();
             }
         }
+        //put the packages text to an appropriate place
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
     }
 
+    /**
+     * Function used for inserting packages from recursively inserted pages to the main page
+     * It loads packages from given data and adds them as a packages.
+     * @param string $data Parsed subpage.
+     * @return string Parsed subpage without packages data (and with packages loaded)
+     */
+    private function _loadPackages($data) {
+        preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
+        $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
+
+        //load packages and insert them
+        $packages = unserialize($pckg[1]);
+        if (!is_null($packages) && is_array($packages)) {
+            foreach ($packages as $package) {
+                $this->_addPackage($package);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Function inserts package used for hyperlinks.
+     */
+    private function _insertLinkPackages() {
+        $package = new Package('hyperref');
+        //fixes the encoding warning
+        $package->addParameter('unicode');
+        $this->_addPackage($package);
+    }
+
+    /**
+     * Function used for exporting lists, they differ only by command.
+     * @param string $command Proper LaTeX list command
+     */
     private function _list_open($command) {
         $this->doc .= "\n";
         if ($this->list_opened) {
@@ -1019,6 +1091,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\\begin{" . $command . "}\n";
     }
 
+    /**
+     * Function used for exporting the end of lists, they differ only by command.
+     * @param string $command Proper LaTeX list command
+     */
     private function _list_close($command) {
         if ($this->last_level == 1) {
             $this->list_opened = FALSE;
@@ -1027,24 +1103,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\\end{" . $command . "}\n";
     }
 
-    private function _loadPackages($data) {
-        preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
-        $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
-
-        $packages = unserialize($pckg[1]);
-        if (!is_null($packages) && is_array($packages)) {
-            foreach ($packages as $package) {
-                $this->_addPackage($package);
-            }
-        }
-        return $data;
-    }
-
+    /**
+     * This function highlights fix me DW command.
+     * This format is used in some DokuWiki instances.
+     * format is: FIXME[author](description of a thing to fix)
+     */
     private function _highlightFixme() {
         $this->doc = str_replace('FIXME', '\hl{FIXME}', $this->doc);
         $this->doc = preg_replace_callback('#{FIXME}\[(.*?)\]\((.*?)\)#si', array(&$this, '_highlightFixmeHandler'), $this->doc);
     }
 
+    /**
+     * Function handling parsing of the fix me DW command.
+     * @param array of strings $matches strings from the regex
+     * @return regex result replacement
+     */
     private function _highlightFixmeHandler($matches) {
         $matches[1] = $this->_stripDiacritics($matches[1]);
         $matches[2] = $this->_stripDiacritics($matches[2]);
@@ -1052,7 +1125,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Indents the list given the last seen level.
+     * Indents the list according to the last seen level.
      */
     private function _indent_list() {
         for ($i = 1; $i < $this->last_level; $i++) {
@@ -1060,17 +1133,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
-    private function _insertLinkPackages() {
-        $package = new Package('hyperref');
-        //to fix encoding warning
-        $package->addParameter('unicode');
-        $this->_addPackage($package);
-    }
-
     /**
      * Insert header to the LaTeX document with right level command.
-     * @param type $level LaTeX command for header on right level.
-     * @param type $text Text of the Header.
+     * @param string $level LaTeX command for header on right level.
+     * @param string $text Text of the Header.
      */
     private function _header($level, $text) {
         $this->_open($level);
@@ -1090,37 +1156,57 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return false;
     }
 
+    /**
+     * Escapes LaTeX special chars.
+     * Entities are in the middle of special tags so eg. MathJax texts are not escaped, but entities are.
+     * @param string $text Text to be escaped.
+     * @return string Escaped text.
+     */
     private function _latexSpecialChars($text) {
+        //find only entities in TEXT, not in eg MathJax
         preg_match('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $text, $entity);
+        //replace classic LaTeX escape chars
         $text = str_replace(array('\\', '{', '}', '&', '%', '$', '#', '_', '~', '^', '<', '>'), array('\textbackslash', '\{', '\}', '\&', '\%', '\$', '\#', '\_', '\textasciitilde{}', '\textasciicircum{}', '\textless ', '\textgreater '), $text);
+        //finalize escaping
         $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
-        /* $text = str_replace('$', '\$', $text);
-          $text = str_replace('\\$\\backslash\\\\$', '$\backslash$', $text); */
+        //replace entities in TEXT
         $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $entity[1], $text);
         return $text;
     }
 
+    /**
+     * Function replaces entities, which have not been replaced using _latexSpecialChars function
+     */
     private function _removeEntities() {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
 
         //FIXME - this has to be changed in imagereference plugin - just a walkaround
+        //respective musim implementovat kompletni walkaround pro imagereference :)
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
         $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
     }
 
-    private function _checkLinkRecursion($text) {
-        return preg_match('#~~~LINK-RECURSION~~~#si', $text);
-    }
-
+    /**
+     * Function sets, if the next link will be inserted to the file recursively.
+     * @param bool $recursive Will next link be added recursively?
+     */
     public function _setRecursive($recursive) {
         $this->recursive = $recursive;
     }
 
+    /**
+     * Function increases header level of a given number.
+     * @param int $level Size of the increase.
+     */
     public function _increaseLevel($level) {
         $this->last_level_increase = $level;
         $this->headers_level += $level;
     }
 
+    /**
+     * function replacing some characters in MathJax mode
+     * @param string $data Parsed text.
+     */
     public function _mathMode($data) {
         //FIXME toto je ale proti zasadam latexu
         $data = str_replace('->', '\rightarrow', $data);
@@ -1135,6 +1221,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= $data;
     }
 
+    /**
+     * Function removing diacritcs from a text.
+     * @param string $data Text with diacritics
+     * @return string Text withou diacritics
+     */
     private function _stripDiacritics($data) {
         $table = Array(
             'ä' => 'a',
