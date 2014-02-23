@@ -38,74 +38,88 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var array 
      */
     private $packages;
+
     /**
      * Stores the information about last list level
      * @var int
      */
     private $last_level;
+
     /**
      * Is true when the renderer is in a list
      * @var boolean
      */
     private $list_opened;
+
     /**
      * Stores the information about the level of recursion.
      * It stores the depth of current recusively added file.
      * @var int
      */
     private $recursion_level;
+
     /**
      * Used in recursively inserted files, stores information about headers level.
      * @var int
      */
     private $headers_level;
+
     /**
      * FIXME configurable
      * Is TRUE when recursive inserting should be used.
      * @var bool
      */
     private $recursive;
+
     /**
      * Stores the information about the headers level increase in last recursive insertion.
      * @var int
      */
     private $last_level_increase;
+
     /**
      * Stores the information about the number of cells found in a table row.
      * @var int
      */
     private $cells_count;
+
     /**
      * Stores the information about the number a table cols.
      * @var int
      */
     private $table_cols;
+
     /**
      * Stores the last colspan in a table.
      * @var int
      */
     private $last_colspan;
+
     /**
      * Stores the last rowspan in a table.
      * @var int
      */
     private $last_rowspan;
+
     /**
      * Stores the last align of a cell in a table.
      * @var int
      */
     private $last_align;
+
     /**
      * Is TRUE when renderer is inside a table.
      * @var bool
      */
     private $in_table;
+
     /**
      * FIXME conf
      * Stores the default table align
      * @var string
      */
     private $default_table_align;
+
     /**
      * An instance of a RowspanHandler class.
      * @var RowspanHandler
@@ -128,6 +142,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     public function getFormat() {
         return 'latex';
     }
+
     /**
      * Renderer is always created as a new instance.
      */
@@ -144,7 +159,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //register global variables used for recursive rendering
         global $latexit_level;
         global $latexit_headers;
-    
+
         //initialize variables
         $this->packages = array();
         $this->list_opened = FALSE;
@@ -152,7 +167,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->in_table = FALSE;
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
-        
+        //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
+        $this->default_table_align = 'l';
+
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
         } else {
@@ -163,9 +180,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             $this->headers_level = $latexit_headers;
         }
-        
+
         //FIXME nastavit nejak hlavni title dokumentu podle title stranky?
-        
         //this tag will be replaced in the end, all required packages will be added
         $packages = '~~~PACKAGES~~~';
         if (!$this->_immersed()) {
@@ -175,7 +191,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                     . "\\usepackage[utf8x]{inputenc}\n"
                     . "\\usepackage[table]{xcolor}\n"
                     . "\\usepackage{czech}\n";
-            
+
             $document_start = "\\begin{document}";
             //FIXME if conf
             $header = $header_default;
@@ -205,13 +221,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $footer_default = "\\end{document}\n";
             //FIXME if conf footer
             $this->doc .= $footer_default;
-            
+
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
         }
         //insert all packages collected during rendering as \usepackage
-        $this->_insertPackages();      
+        $this->_insertPackages();
     }
 
     //FIXME muze vlozit latex obsah, ale nejspis jen podle nastaveni v konfiguraci
@@ -289,7 +305,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function p_open() {
         $this->doc .= "\n\n";
     }
-
 
     /**
      * Function is called, when renderer finds a linebreak.
@@ -443,17 +458,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an unordered list in latex, even with right indention
      */
     function listu_open() {
-        $this->doc .= "\n";
-        //FIXME possible refactor
-        if ($this->list_opened) {
-            for ($i = 1; $i < $this->last_level + 1; $i++) {
-                $this->doc .= "  ";
-            }
-        } else {
-            $this->list_opened = TRUE;
-        }
-        $this->_indent_list();
-        $this->doc .= "\\begin{itemize}\n";
+        $this->_list_open("itemize");
     }
 
     /**
@@ -461,12 +466,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for the end of an unordered list in latex, even with right indention
      */
     function listu_close() {
-        //FIXME possible refactor
-        if ($this->last_level == 1) {
-            $this->list_opened = FALSE;
-        }
-        $this->_indent_list();
-        $this->doc .= "\\end{itemize}\n";
+        $this->_list_close("itemize");
     }
 
     /**
@@ -474,17 +474,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for an ordered list in latex, even with right indention
      */
     function listo_open() {
-        $this->doc .= "\n";
-        //FIXME possible refactor
-        if ($this->list_opened) {
-            for ($i = 1; $i < $this->last_level + 1; $i++) {
-                $this->doc .= "  ";
-            }
-        } else {
-            $this->list_opened = TRUE;
-        }
-        $this->_indent_list();
-        $this->doc .= "\\begin{enumerate}\n";
+        $this->_list_open("enumerate");
     }
 
     /**
@@ -492,12 +482,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It calls command for the end of an ordered list in latex, even with right indention
      */
     function listo_close() {
-        //FIXME possible refactor
-        if ($this->last_level == 1) {
-            $this->list_opened = FALSE;
-        }
-        $this->_indent_list();
-        $this->doc .= "\\end{enumerate}\n";
+        $this->_list_close("enumerate");
     }
 
     /**
@@ -511,20 +496,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * function is called, when renderer finds the end of a list item
-     */
-    function listitem_close() {
-        //does nothing in latex
-    }
-
-    /**
-     * function is called, when renderer finds start of a list item content
-     */
-    function listcontent_open() {
-        //does nothing in latex
-    }
-
-    /**
      * function is called, when renderer finds the end of a list item content
      * It adds newline to the latex file.
      */
@@ -532,70 +503,94 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\n";
     }
 
+    //FIXME
     function unformatted($text) {
+        //FIXME
         $this->doc .= $this->_latexSpecialChars($text);
     }
 
+    //FIXME
     function php($text) {
         
     }
 
+    //FIXME
     function phpblock($text) {
         
     }
 
+    //FIXME
     function html($text) {
         
     }
 
+    //FIXME
     function htmlblock($text) {
         
     }
 
+    //FIXME
     function preformatted($text) {
         
     }
 
+    //FIXME
     function quote_open() {
         
     }
 
+    //FIXME
     function quote_close() {
         
     }
 
+    //FIXME
     function file($text, $lang = null, $file = null) {
         
     }
 
+    /**
+     * Function adds a block of programming language code to LaTeX file
+     * using the listings package.
+     * @param string $text The code itself.
+     * @param string $lang Programming language.
+     * @param string $file The code can be inserted to DokuWiki as a file.
+     */
     function code($text, $lang = null, $file = null) {
         //FIXME file, konfigurace?
         $pckg = new Package('listings');
         $this->_addPackage($pckg);
         if (!is_null($lang)) {
+            //if language name is specified, insert it to LaTeX
             $this->_open('lstset');
             $this->doc .= 'language=';
             $this->doc .= $this->_latexSpecialChars($lang);
             $this->_close();
             $this->doc .= "\n";
         }
+        //open the code block
         $this->_open('begin');
         $this->doc .= 'lstlisting';
         $this->_close();
         $this->doc .= "\n";
+        //get rid of some non-standard characters
         $text = str_replace('”', '"', $text);
         $text = str_replace('–', '-', $text);
         $this->doc .= $text;
+        //close the code block
         $this->_open('end');
         $this->doc .= 'lstlisting';
         $this->_close();
         $this->doc .= "\n\n";
     }
 
+    //FIXME https://www.dokuwiki.org/abbreviations
+    //http://tex.stackexchange.com/questions/32314/is-there-an-easy-way-to-add-hover-text-to-all-incidents-of-math-mode-where-the-h
     function acronym($acronym) {
         $this->doc .= $this->_latexSpecialChars($acronym);
     }
 
+    //FIXME
     function smiley($smiley) {
         //FIXME other smileys a odstraneni diakritiky
         if ($smiley == 'FIXME') {
@@ -605,10 +600,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    //FIXME what is this?
     function wordblock($word) {
         
     }
 
+    //FIXME
     function entity($entity) {
         //FIXME https://www.dokuwiki.org/wiki:syntax
         $this->doc .= '///ENTITYSTART///';
@@ -647,6 +644,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= '///ENTITYEND///';
     }
 
+    //FIXME
     // 640x480 ($x=640, $y=480)
     function multiplyentity($x, $y) {
         //FIXME
@@ -669,7 +667,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     function doublequoteopening() {
-        //FIXME  jine jazyky
+        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= ',,';
         //$this->doc .= '\\uv{';
         //english ``
@@ -682,11 +680,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //english "
     }
 
-    // $link like 'SomePage'
+    /**
+     * Function is called, when renderer finds a link written in text like CamelCase.
+     * It just calls the common link function.
+     * @param string $link Internal link to a wiki page.
+     */
     function camelcaselink($link) {
         $this->internallink($link, $link);
     }
 
+    //FIXME co to je?
+    //mozna jenom link v ramci stranky (zalozky)
     function locallink($hash, $name = NULL) {
         
     }
@@ -696,24 +700,35 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It resolves the internal link (namespaces, URL)
      * Depending on the configuration:
      *     It handles link as an external and calls proper function in LaTeX depending on the title
-     * @param type $link Internal link (can be without proper namespace)
-     * @param type $title Title, can be null or array (if it is media)
+     *     It recursively adds the linked page to the exported LaTeX file
+     * This feature is not in classic plugin configuration.
+     * If you want to have a link recursively inserted, add ~~RECURSIVE~~ just before it.
+     * The count of ~ means the same as = for headers. It will determine the 
+     * level of first header used in recursively inserted text.
+     * @param string $link Internal link (can be without proper namespace)
+     * @param string/array $title Title, can be null or array (if it is media)
      */
     function internallink($link, $title = NULL) {
+        //register globals
         global $ID; //in this global var DokuWiki stores the current page id with namespaces
         global $latexit_level;
         global $latexit_headers;
 
+        //escape link title
         $title = $this->_latexSpecialChars($title);
 
         $link_original = $link;
 
-        $current_namespace = getNS($ID); //get current namespace from current page
-        resolve_pageid($current_namespace, $link, $exists); //get the page ID with right namespaces
+        //get current namespace from current page
+        $current_namespace = getNS($ID);
+        //get the page ID with right namespaces
         //$exists stores information, if the page exists. We don't care about that right now. FIXME?
+        resolve_pageid($current_namespace, $link, $exists);
+
         $params = '';
         $absoluteURL = true;
-        $url = wl($link, $params, $absoluteURL); //get the whole URL
+        //get the whole URL
+        $url = wl($link, $params, $absoluteURL);
         //FIXME keep hash in the end? have to test!
         //FIXME configurable
         if ($this->recursive) {
@@ -721,22 +736,24 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $latexit_level = $this->recursion_level + 1;
             $latexit_headers = $this->headers_level;
 
+            //start parsing linked page
             $data = p_cached_output(wikifn($link), 'latexit');
             $data = $this->_loadPackages($data);
             $this->doc .= "\n\n";
+            //insert comment to LaTeX
             $this->doc .= "%RECURSIVELY INSERTED FILE START";
             $this->doc .= "\n\n";
             $this->doc .= $data;
             $this->doc .= "\n\n";
+            //insert comment to LaTeX
             $this->doc .= "%RECURSIVELY INSERTED FILE END";
             $this->doc .= "\n\n";
+            //get headers level to previous level
             $this->headers_level -= $this->last_level_increase;
         } else {
+            //FIXME refactor to one function?
             //handle internal links as they were external
-            $package = new Package('hyperref');
-            //to fix encoding warning
-            $package->addParameter('unicode');
-            $this->_addPackage($package);
+            $this->_insertLinkPackages();
             //FIXME title pictures
             if (is_null($title) || trim($title) == '') {
                 $this->doc .= '\\href{' . $url . '}{' . $link_original . '}';
@@ -750,15 +767,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds an external link
      * It calls proper function in LaTeX depending on the title
-     * @param type $link External link
-     * @param type $title Title, can be null or array (if it is media)
+     * @param string $link External link
+     * @param string/array $title Title, can be null or array (if it is media)
      */
     function externallink($link, $title = NULL) {
         $title = $this->_latexSpecialChars($title);
-        $package = new Package('hyperref');
-        //to fix encoding warning
-        $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->_insertLinkPackages();
         //FIXME pictures
         if (is_null($title) || trim($title) == '') {
             $this->doc .= '\\url{' . $link . '}';
@@ -767,10 +781,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    //FIXME
     function rss($url, $params) {
         
     }
 
+    //FIXME
     // $link is the original link - probably not much use
     // $wikiName is an indentifier for the wiki
     // $wikiUri is the URL fragment to append to some known URL
@@ -778,11 +794,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
+    //FIXME
     // Link to file on users OS, $title could be an array (media)
     function filelink($link, $title = NULL) {
         
     }
 
+    //FIXME
     // Link to a Windows share, , $title could be an array (media)
     function windowssharelink($link, $title = NULL) {
         
@@ -791,15 +809,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds an email link
      * It calls proper function in LaTeX depending on the name and sets mailto
-     * @param type $address Email address
-     * @param type $name Name, can be null or array (if it is media)
+     * @param string $address Email address
+     * @param string/array $name Name, can be null or array (if it is media)
      */
     function emaillink($address, $name = NULL) {
         $name = $this->_latexSpecialChars($name);
-        $package = new Package('hyperref');
-        //to fix encoding warning
-        $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->_insertLinkPackages();
         //FIXME pictures
         if (is_null($name) || trim($name) == '') {
             $this->doc .= '\\href{mailto:' . $address . '}{' . $address . '}';
@@ -808,6 +823,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    //FIXME
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{images/}}');
@@ -824,42 +840,60 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\includegraphics{" . $path . "}";
     }
 
+    //FIXME
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         
     }
 
+    //FIXME
     function internalmedialink(
     $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
     ) {
         var_dump($src);
     }
 
+    //FIXME
     function externalmedialink(
     $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
     ) {
         
     }
 
+    /**
+     * Function is called, when a renderer finds a start of an table.
+     * It inserts needed packages and the header of the table.
+     * @param int $maxcols Maximum of collumns in the table
+     * @param int $numrows Number of rows in table (not required in LaTeX)
+     * @param int $pos This parameter is not required by LaTeX.
+     */
     function table_open($maxcols = null, $numrows = null, $pos = null) {
-        $this->default_table_align = 'l';
         $this->table_cols = $maxcols;
+        //set environment to tables
         $this->in_table = true;
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
+        //print the header
         $this->doc .= "\\begin{longtable}{|";
         for ($i = 0; $i < $maxcols; $i++) {
             $this->doc .= $this->default_table_align . "|";
-            //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
-        }
+            }
         $this->doc .= "}\n\hline\n";
     }
 
+    /**
+     * Function is called in the end of every table.
+     * It prints the footer of the table.
+     * @param int $pos Not required in LaTeX.
+     */
     function table_close($pos = null) {
+        //close the table environment
         $this->in_table = false;
+        //print the footer
         $this->doc .= "\\end{longtable}\n\n";
     }
 
     function tablerow_open() {
+        //set the number of cells printed
         $this->cells_count = 0;
     }
 
@@ -972,6 +1006,27 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
     }
 
+    private function _list_open($command) {
+        $this->doc .= "\n";
+        if ($this->list_opened) {
+            for ($i = 1; $i < $this->last_level + 1; $i++) {
+                $this->doc .= '  ';
+            }
+        } else {
+            $this->list_opened = TRUE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\begin{" . $command . "}\n";
+    }
+
+    private function _list_close($command) {
+        if ($this->last_level == 1) {
+            $this->list_opened = FALSE;
+        }
+        $this->_indent_list();
+        $this->doc .= "\\end{" . $command . "}\n";
+    }
+
     private function _loadPackages($data) {
         preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
         $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
@@ -1003,6 +1058,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         for ($i = 1; $i < $this->last_level; $i++) {
             $this->doc .= '  ';
         }
+    }
+
+    private function _insertLinkPackages() {
+        $package = new Package('hyperref');
+        //to fix encoding warning
+        $package->addParameter('unicode');
+        $this->_addPackage($package);
     }
 
     /**
@@ -1040,12 +1102,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     private function _removeEntities() {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
-        
+
         //FIXME - this has to be changed in imagereference plugin - just a walkaround
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
         $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
     }
-
 
     private function _checkLinkRecursion($text) {
         return preg_match('#~~~LINK-RECURSION~~~#si', $text);
@@ -1070,10 +1131,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $data = str_replace('<=>', '\Leftrightarrow', $data);
         $data = str_replace('...', '\ldots', $data);
         $data = str_replace('−', '-', $data);
-        
+
         $this->doc .= $data;
     }
-    
+
     private function _stripDiacritics($data) {
         $table = Array(
             'ä' => 'a',
