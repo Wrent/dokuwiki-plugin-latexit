@@ -278,18 +278,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 break;
         }
     }
-
-    //FIXME co to dela?
-    function section_open($level) {
-        
-    }
-
-    //FIXME co to dela?
-    function section_close() {
-        
-    }
-
-    /**
+ 
+   /**
      * Basic funcion called, when a text not from DokuWiki syntax is read
      * It adds the data to the document, potentionally dangerous characters for
      * LaTeX are escaped or removed.
@@ -319,9 +309,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
-    //FIXME
+    /**
+     * Function is called, when renderer finds a horizontal line.
+     * It adds centered horizontal line in LaTeX Document.
+     */
     function hr() {
-        
+        $this->doc .= "\n\n\begin{center}\n";
+        $this->doc .= "\line(1,0){250}\n";
+        $this->doc .= '\end{center}';
+        $this->doc .= "\n\n";
     }
 
     /**
@@ -503,30 +499,32 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\n";
     }
 
-    //FIXME
+    /**
+     * Original text is not formatted by DW, so this function just inserts the text as it is.
+     * It just escapes special characters.
+     */
     function unformatted($text) {
-        //FIXME
         $this->doc .= $this->_latexSpecialChars($text);
     }
 
     //FIXME
     function php($text) {
-        
+        $this->code($text, "PHP");
     }
 
     //FIXME
     function phpblock($text) {
-        
+        $this->code($text, "PHP");
     }
 
     //FIXME
     function html($text) {
-        
+        $this->code($text, "HTML");
     }
 
     //FIXME
     function htmlblock($text) {
-        
+        $this->code($text, "HTML");
     }
 
     //FIXME
