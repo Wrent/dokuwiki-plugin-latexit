@@ -243,9 +243,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function is called, when renderer finds a new header.
      * It calls the LaTeX command for an appropriate level.
-     * @param type $text Text of the header
-     * @param type $level Level of the header.
-     * @param type $pos Not used in LaTeX
+     * @param string $text Text of the header
+     * @param int $level Level of the header.
+     * @param int $pos Not used in LaTeX
      */
     function header($text, $level, $pos) {
 
@@ -277,12 +277,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_close();
                 break;
         }
+        //add label so each section can be referenced
+        $this->doc .= "\label{".$this->_createLabel($text)."}";
     }
  
    /**
      * Basic funcion called, when a text not from DokuWiki syntax is read
      * It adds the data to the document, potentionally dangerous characters for
      * LaTeX are escaped or removed.
+     * @param string $text Text to be inserted.
      */
     function cdata($text) {
         $this->doc .= $this->_latexSpecialChars($text);
@@ -484,6 +487,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds start of a list item
      * It calls command for a list item in latex, even with right indention
+     * @param int $level Level of indention.
      */
     function listitem_open($level) {
         $this->last_level = $level;
@@ -502,49 +506,79 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Original text is not formatted by DW, so this function just inserts the text as it is.
      * It just escapes special characters.
+     * @param string $text Unformatted text.
      */
     function unformatted($text) {
         $this->doc .= $this->_latexSpecialChars($text);
     }
 
-    //FIXME
+    /**
+     * Inserts PHP code to the document.
+     * @param string $text PHP code.
+     */
     function php($text) {
         $this->code($text, "PHP");
     }
 
-    //FIXME
+    /**
+     * Inserts block of PHP code to the document.
+     * @param string $text PHP code.
+     */
     function phpblock($text) {
         $this->code($text, "PHP");
     }
 
-    //FIXME
+    /**
+     * Inserts HTML code to the document.
+     * @param string $text HTML code.
+     */
     function html($text) {
         $this->code($text, "HTML");
     }
 
-    //FIXME
+    /**
+     * Inserts block of HTML code to the document.
+     * @param string $text HTML code.
+     */
     function htmlblock($text) {
         $this->code($text, "HTML");
     }
 
-    //FIXME
+    /**
+     * Inserts preformatted text (with all whitespaces)
+     * @param string $text Preformatted text.
+     */
     function preformatted($text) {
-        
+        $this->doc .= "\n\begin{verbatim}\n";
+        $this->doc .= $this->_latexSpecialChars($text);
+        $this->doc .= "\n".'\end{verbatim}'."\n";
     }
 
-    //FIXME
+    /**
+     * Opens the quote environment.
+     */
     function quote_open() {
-        
+        $this->doc .= "\n\begin{quote}\n";
     }
 
-    //FIXME
+    /**
+     * Closes the quote environment.
+     */
     function quote_close() {
-        
+        $this->doc .= "\n".'\end{quote}'."\n";
     }
 
-    //FIXME
+ 
+    /**
+     * * File tag is almost the same like the code tag, but it enables to download
+     * the code directly from DW. 
+     * Therefore we just add the filename to the top of code.
+     * @param string $text The code itself.
+     * @param string $lang Programming language.
+     * @param string $file The code will be exported from DW as a file.
+     */
     function file($text, $lang = null, $file = null) {
-        
+        $this->code($text, $lang, $file);
     }
 
     /**
@@ -555,22 +589,29 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $file The code can be inserted to DokuWiki as a file.
      */
     function code($text, $lang = null, $file = null) {
-        //FIXME file, konfigurace?
+        //FIXME konfigurace?
         $pckg = new Package('listings');
         $this->_addPackage($pckg);
+        $this->_open('lstset');
+        $this->doc .= 'frame=single';
         if (!is_null($lang)) {
             //if language name is specified, insert it to LaTeX
-            $this->_open('lstset');
-            $this->doc .= 'language=';
-            $this->doc .= $this->_latexSpecialChars($lang);
-            $this->_close();
-            $this->doc .= "\n";
+            $this->doc .= ', language=';
+            $this->doc .= $this->_latexSpecialChars($lang);   
         }
+         //insert filename
+        if(!is_null($file)) {
+           $this->doc .= ', title=';
+           $this->doc .= $this->_latexSpecialChars($file);   
+        }
+        $this->_close();
+        $this->doc .= "\n";
         //open the code block
         $this->_open('begin');
         $this->doc .= 'lstlisting';
         $this->_close();
         $this->doc .= "\n";
+       
         //get rid of some non-standard characters
         $text = str_replace('”', '"', $text);
         $text = str_replace('–', '-', $text);
@@ -582,30 +623,42 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\n\n";
     }
 
-    //FIXME https://www.dokuwiki.org/abbreviations
-    //http://tex.stackexchange.com/questions/32314/is-there-an-easy-way-to-add-hover-text-to-all-incidents-of-math-mode-where-the-h
+    
+    /**
+     * This function is called when an acronym is found. It just inserts it as a classic text.
+     * I decided not to implement the mouse over text, although it is possible, but
+     * it does not work in all PDF browsers. 
+     * http://tex.stackexchange.com/questions/32314/is-there-an-easy-way-to-add-hover-text-to-all-incidents-of-math-mode-where-the-h
+     * @param string $acronym The Acronym.
+     */
     function acronym($acronym) {
         $this->doc .= $this->_latexSpecialChars($acronym);
     }
 
-    //FIXME
+    /**
+     * This function is called when a smiley is found.
+     * LaTeX does not support smileys, so they are inserted as a normal text.
+     * FIXME and DELETEME are exceptions, they are highlited (in the end of exporting).
+     * @param string $smiley Smiley chars.
+     */
     function smiley($smiley) {
-        //FIXME other smileys a odstraneni diakritiky
-        if ($smiley == 'FIXME') {
+        if ($smiley == 'FIXME' || $smiley == 'DELETEME') {
             $pckg = new Package('soul');
             $this->_addPackage($pckg);
-            $this->doc .= 'FIXME';
+            $this->doc .= $smiley;
+        } else {
+            $this->doc .= $this->_latexSpecialChars($smiley);
         }
     }
 
-    //FIXME what is this?
-    function wordblock($word) {
-        
-    }
-
-    //FIXME
+    /**
+     * DocuWiki can represent some characters as they typograficaly correct entities.
+     * Most of them exist in LaTeX as well, but some only in math mode.
+     * @param string $entity An entity.
+     */
     function entity($entity) {
-        //FIXME https://www.dokuwiki.org/wiki:syntax
+        //this text is removed after exporting
+        //it is here to disallow double escaping of some math characters
         $this->doc .= '///ENTITYSTART///';
         switch ($entity) {
             case '->':
@@ -642,28 +695,48 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= '///ENTITYEND///';
     }
 
-    //FIXME
-    // 640x480 ($x=640, $y=480)
+   /**
+    * Inserts multiply entity (eg. 640x480) to LaTeX file.
+    * @param int $x First number
+    * @param int $y Second number
+    */
     function multiplyentity($x, $y) {
-        //FIXME
-        $this->doc .= $this->_latexSpecialChars($entity);
+        $this->doc .= '///ENTITYSTART///';
+        $this->doc .= '$';
+        $this->doc .= $this->_latexSpecialChars($x);
+        $this->doc .= ' \times ';
+        $this->doc .= $this->_latexSpecialChars($y);
+        $this->doc .= '$';
+        $this->doc .= '///ENTITYEND///';
     }
 
+    /**
+     * Inserts single quote opening to LaTeX depending on set language.
+     */
     function singlequoteopening() {
-        //FIXME
+        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '`';
     }
 
+    /**
+     * Inserts single quote closing to LaTeX depending on set language.
+     */
     function singlequoteclosing() {
-        //FIXME
+        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '\'';
     }
 
+    /**
+     * Inserts apostrophe to LaTeX depending on set language.
+     */
     function apostrophe() {
-        //FIXME
+        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '\'';
     }
 
+    /**
+     * Inserts double quote opening to LaTeX depending on set language.
+     */
     function doublequoteopening() {
         //FIXME  jine jazyky viz ODT plugin
         $this->doc .= ',,';
@@ -671,6 +744,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //english ``
     }
 
+    /**
+     * Inserts double quote closing to LaTeX depending on set language.
+     */
     function doublequoteclosing() {
         //FIXME  jine jazyky
         $this->doc .= '"';
@@ -687,10 +763,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->internallink($link, $link);
     }
 
-    //FIXME co to je?
-    //mozna jenom link v ramci stranky (zalozky)
+    /**
+     * This function handles the links on the page itself (#something at the end of URL)
+     * It inserts reference to LaTeX document
+     * @param string $hash Label of a section
+     * @param string $name Text of the original link
+     */
     function locallink($hash, $name = NULL) {
-        
+        $this->_insertLinkPackages();
+        if(!is_null($name)) {
+            $this->doc .= $this->_latexSpecialChars($name);
+        } else {
+            $this->doc .= $this->_latexSpecialChars($hash);
+        }
+        $this->doc .= ' (\autoref{'.$hash.'})';
     }
 
     /**
@@ -727,7 +813,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $absoluteURL = true;
         //get the whole URL
         $url = wl($link, $params, $absoluteURL);
+        $url = $this->_secureLink($url);
         //FIXME keep hash in the end? have to test!
+        //FIXME s hashem na konci by se dalo odkazovat na jednotlive sekce dokumentu
+        //teoreticky by se tak dal resit i potencialni rekurze
         //FIXME configurable
         if ($this->recursive) {
             //FIXME bacha na nekonecnou rekurzi
@@ -770,6 +859,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function externallink($link, $title = NULL) {
         $title = $this->_latexSpecialChars($title);
+        $link = $this->_secureLink($link);
         $this->_insertLinkPackages();
         //FIXME pictures
         if (is_null($title) || trim($title) == '') {
@@ -784,24 +874,42 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-    //FIXME
-    // $link is the original link - probably not much use
-    // $wikiName is an indentifier for the wiki
-    // $wikiUri is the URL fragment to append to some known URL
+   /**
+    * InterWiki links lead to another wikis and they can be written in special syntax.
+    * This resolves the link and inserts it as normal external link.
+    * @param string $link Original link in DW syntax
+    * @param string $title Title of link, can also be image
+    * @param string $wikiName Name of wiki (according to configuration)
+    * @param string $wikiUri Text in link after wiki address
+    */
     function interwikilink($link, $title = NULL, $wikiName, $wikiUri) {
-        
+        $url = $this-> _resolveInterWiki($wikiName,$wikiUri);
+        if (is_null($title)) {
+            $name = $wikiUri;
+        } else {
+            $name = $title;
+        }
+        $this->externallink($url, $name);
     }
 
-    //FIXME
-    // Link to file on users OS, $title could be an array (media)
+    /**
+     * Inserts a link to a file on local filesystem.
+     * It just handles the link as an external link.
+     * @param string $link Link to a file.
+     * @param string $title Title of the link, can be image.
+     */
     function filelink($link, $title = NULL) {
-        
+        $this->externallink($link, $title);
     }
 
-    //FIXME
-    // Link to a Windows share, , $title could be an array (media)
+    /**
+     * Inserts a link to a Windows share intranet server.
+     * It just handles the link as an external link.
+     * @param string $link Link to a file.
+     * @param string $title Title of the link, can be image.
+     */
     function windowssharelink($link, $title = NULL) {
-        
+        $this->externallink($link, $title);
     }
 
     /**
@@ -1105,9 +1213,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function highlights fix me DW command.
      * This format is used in some DokuWiki instances.
      * format is: FIXME[author](description of a thing to fix)
+     * (this feature comes from CCM at FIT CVUT, for whom I write the plugin)
      */
     private function _highlightFixme() {
         $this->doc = str_replace('FIXME', '\hl{FIXME}', $this->doc);
+        $this->doc = str_replace('DELETEME', '\hl{DELETEME}', $this->doc);
         $this->doc = preg_replace_callback('#{FIXME}\[(.*?)\]\((.*?)\)#si', array(&$this, '_highlightFixmeHandler'), $this->doc);
     }
 
@@ -1218,7 +1328,27 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         $this->doc .= $data;
     }
+    
+    /**
+     * Function creates label from a header name.
+     * @param string $text A header name.
+     * @return string Label
+     */
+    private function _createLabel($text) {
+        $text = strtolower($text);
+        $text = str_replace(" ", "_", $text);
+        return $text;
+   }
 
+   /**
+    * Escapes backslash in the URL.
+    * @param string $link The URL.
+    * @return string Escaped URL.
+    */
+   private function _secureLink($link) {
+       return str_replace("\\", "\\\\", $link);
+   }
+   
     /**
      * Function removing diacritcs from a text.
      * @param string $data Text with diacritics
