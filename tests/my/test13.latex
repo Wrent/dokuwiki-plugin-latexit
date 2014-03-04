@@ -1,0 +1,19 @@
+\documentclass[a4paper, oneside, 10pt]{memoir}
+\usepackage[utf8x]{inputenc}
+\usepackage[table]{xcolor}
+\usepackage{czech}
+\begin{document}
+
+
+\begin{verbatim}
+This text is preformatted a        af f s   sdf sdf s     s df 
+\end{verbatim}
+
+
+I love this quote:
+\begin{quote}
+ You are awesome!
+\end{quote}
+
+
+\end{document}

@@ -1,0 +1,29 @@
+\documentclass[a4paper, oneside, 10pt]{memoir}
+\usepackage[utf8x]{inputenc}
+\usepackage[table]{xcolor}
+\usepackage{czech}
+\usepackage{soul}
+\begin{document}
+
+8-)
+8-O
+:-(
+:-)
+=)
+:-/
+:-\textbackslash{}
+:-?
+:-D
+:-P
+:-O
+:-X
+:-|
+;-)
+a \textasciicircum{}\_\textasciicircum{}
+:?:
+:!:
+LOL
+\hl{FIXME}
+\hl{DELETEME}
+
+\end{document}

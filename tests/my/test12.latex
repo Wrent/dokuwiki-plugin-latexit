@@ -6,7 +6,11 @@
 
 
 
-$\rightarrow$ $\leftarrow$ $\leftrightarrow$ $\Rightarrow$ $\Leftarrow$ $\Leftrightarrow$ \textgreater \textgreater  \textless \textless  -- ---  \copyright  \texttrademark  \textregistered 
-\uv{He thought 'It's a man's world'...}
+$\rightarrow$ $\leftarrow$ $\leftrightarrow$ $\Rightarrow$ $\Leftarrow$ $\Leftrightarrow$ \textgreater \textgreater  \textless \textless  -- --- $640 \times 480$ \copyright  \texttrademark  \textregistered 
+,,He thought 'It's a man's world'..."
+
+\begin{center}
+\line(1,0){250}
+\end{center}
 
 \end{document}

@@ -7,18 +7,20 @@
 \begin{document}
 
 \section{Kořenový dokument}
-
+\label{kořenový_dokument}
 Text kořenového dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
 \subsection{Vnořený dokument}
+\label{vnořený_dokument}
 
 Text vnořeného dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
 \subsubsection{Vnořený dokument 2}
+\label{vnořený_dokument_2}
 
 Text vnořeného dokumentu 2
 
