@@ -1,0 +1,7 @@
+base   latexit
+author Adam Kučera
+email  adam.kucera@wrent.cz
+date   2013-12-03
+name   latexit plugin
+desc   Plugin to export DokuWiki pages to one LaTeX file.
+url    https://gitlab.fit.cvut.cz/kucerad5/latexit/
