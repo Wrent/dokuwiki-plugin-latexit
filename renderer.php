@@ -275,6 +275,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_open('textbf');
                 $this->doc .= $this->_latexSpecialChars($text);
                 $this->_close();
+                $this->doc .= "\n";
                 break;
         }
         //add label so each section can be referenced
