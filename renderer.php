@@ -127,6 +127,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $rowspan_handler;
 
     /**
+     * Is set on true if the document contains media.
+     */
+    private $media;
+
+    /**
+     * Stores the ZipArchive objects, if neccessary.
+     * @var ZipArchive
+     */
+    private $zip;
+
+    /**
      * Make available as LaTeX renderer
      */
     public function canRender($format) {
@@ -167,6 +178,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->in_table = FALSE;
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
+        $this->media = FALSE;
+        $this->zip = new ZipArchive();
+        $this->_prepareZIP();
         //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
         $this->default_table_align = 'l';
 
@@ -197,11 +211,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $header = $header_default;
             $this->doc .= $header . $packages . $document_start;
             $this->doc .= "\n\n";
-
-            //set the headers, so the browsers knows, this is not the HTML file
-            header('Content-Type: application/x-latex');
-            $filename = "output" . time() . ".latex";
-            header("Content-Disposition: attachment; filename='$filename';");
         } else {
             //document is RECURSIVELY added file to another file
             $this->doc .= '~~~PACKAGES-START~~~';
@@ -225,9 +234,32 @@ class renderer_plugin_latexit extends Doku_Renderer {
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
+
+            //insert all packages collected during rendering as \usepackage
+            $this->_insertPackages();
+
+            if ($this->media) {
+                $filename = $this->zip->filename;
+                $this->zip->addFromString("output.latex", $this->doc);
+                //zip archive is created when this function is called,
+                //so if no ZIP is needed, nothing is created
+                $this->zip->close();
+
+                header("Content-type: application/zip");
+                header("Content-Disposition: attachment; filename=" . "output" . time() . ".zip");
+                header("Content-length: " . filesize($filename));
+                header("Pragma: no-cache");
+                header("Expires: 0");
+                readfile($filename);
+                //delete temporary zip file
+                unlink($filename); 
+           } else {
+                //set the headers, so the browsers knows, this is not the HTML file
+                header('Content-Type: application/x-latex');
+                $filename = "output" . time() . ".latex";
+                header("Content-Disposition: attachment; filename='$filename';");
+            }
         }
-        //insert all packages collected during rendering as \usepackage
-        $this->_insertPackages();
     }
 
     //FIXME muze vlozit latex obsah, ale nejspis jen podle nastaveni v konfiguraci
@@ -279,10 +311,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 break;
         }
         //add label so each section can be referenced
-        $this->doc .= "\label{".$this->_createLabel($text)."}";
+        $this->doc .= "\label{" . $this->_createLabel($text) . "}";
     }
- 
-   /**
+
+    /**
      * Basic funcion called, when a text not from DokuWiki syntax is read
      * It adds the data to the document, potentionally dangerous characters for
      * LaTeX are escaped or removed.
@@ -552,7 +584,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function preformatted($text) {
         $this->doc .= "\n\begin{verbatim}\n";
         $this->doc .= $this->_latexSpecialChars($text);
-        $this->doc .= "\n".'\end{verbatim}'."\n";
+        $this->doc .= "\n" . '\end{verbatim}' . "\n";
     }
 
     /**
@@ -566,10 +598,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Closes the quote environment.
      */
     function quote_close() {
-        $this->doc .= "\n".'\end{quote}'."\n";
+        $this->doc .= "\n" . '\end{quote}' . "\n";
     }
 
- 
     /**
      * * File tag is almost the same like the code tag, but it enables to download
      * the code directly from DW. 
@@ -598,12 +629,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!is_null($lang)) {
             //if language name is specified, insert it to LaTeX
             $this->doc .= ', language=';
-            $this->doc .= $this->_latexSpecialChars($lang);   
+            $this->doc .= $this->_latexSpecialChars($lang);
         }
-         //insert filename
-        if(!is_null($file)) {
-           $this->doc .= ', title=';
-           $this->doc .= $this->_latexSpecialChars($file);   
+        //insert filename
+        if (!is_null($file)) {
+            $this->doc .= ', title=';
+            $this->doc .= $this->_latexSpecialChars($file);
         }
         $this->_close();
         $this->doc .= "\n";
@@ -612,7 +643,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= 'lstlisting';
         $this->_close();
         $this->doc .= "\n";
-       
+
         //get rid of some non-standard characters
         $text = str_replace('”', '"', $text);
         $text = str_replace('–', '-', $text);
@@ -624,7 +655,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= "\n\n";
     }
 
-    
     /**
      * This function is called when an acronym is found. It just inserts it as a classic text.
      * I decided not to implement the mouse over text, although it is possible, but
@@ -696,11 +726,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= '///ENTITYEND///';
     }
 
-   /**
-    * Inserts multiply entity (eg. 640x480) to LaTeX file.
-    * @param int $x First number
-    * @param int $y Second number
-    */
+    /**
+     * Inserts multiply entity (eg. 640x480) to LaTeX file.
+     * @param int $x First number
+     * @param int $y Second number
+     */
     function multiplyentity($x, $y) {
         $this->doc .= '///ENTITYSTART///';
         $this->doc .= '$';
@@ -772,12 +802,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function locallink($hash, $name = NULL) {
         $this->_insertLinkPackages();
-        if(!is_null($name)) {
+        if (!is_null($name)) {
             $this->doc .= $this->_latexSpecialChars($name);
         } else {
             $this->doc .= $this->_latexSpecialChars($hash);
         }
-        $this->doc .= ' (\autoref{'.$hash.'})';
+        $this->doc .= ' (\autoref{' . $hash . '})';
     }
 
     /**
@@ -875,16 +905,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
         
     }
 
-   /**
-    * InterWiki links lead to another wikis and they can be written in special syntax.
-    * This resolves the link and inserts it as normal external link.
-    * @param string $link Original link in DW syntax
-    * @param string $title Title of link, can also be image
-    * @param string $wikiName Name of wiki (according to configuration)
-    * @param string $wikiUri Text in link after wiki address
-    */
+    /**
+     * InterWiki links lead to another wikis and they can be written in special syntax.
+     * This resolves the link and inserts it as normal external link.
+     * @param string $link Original link in DW syntax
+     * @param string $title Title of link, can also be image
+     * @param string $wikiName Name of wiki (according to configuration)
+     * @param string $wikiUri Text in link after wiki address
+     */
     function interwikilink($link, $title = NULL, $wikiName, $wikiUri) {
-        $url = $this-> _resolveInterWiki($wikiName,$wikiUri);
+        $url = $this->_resolveInterWiki($wikiName, $wikiUri);
         if (is_null($title)) {
             $name = $wikiUri;
         } else {
@@ -935,6 +965,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{images/}}');
         $this->_addPackage($pckg);
+
+
         $namespaces = explode(':', $src);
         for ($i = 1; $i < count($namespaces); $i++) {
             if ($i != 1) {
@@ -942,6 +974,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
             }
             $path .= $namespaces[$i];
         }
+
+        $this->media = TRUE;
+        $location = mediaFN($src);
+        $this->zip->addFile($location, "images/". $path);
+
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
         $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
         $this->doc .= "\includegraphics{" . $path . "}";
@@ -1329,7 +1366,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         $this->doc .= $data;
     }
-    
+
     /**
      * Function creates label from a header name.
      * @param string $text A header name.
@@ -1339,17 +1376,25 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $text = strtolower($text);
         $text = str_replace(" ", "_", $text);
         return $text;
-   }
+    }
 
-   /**
-    * Escapes backslash in the URL.
-    * @param string $link The URL.
-    * @return string Escaped URL.
-    */
-   private function _secureLink($link) {
-       return str_replace("\\", "\\\\", $link);
-   }
-   
+    /**
+     * Escapes backslash in the URL.
+     * @param string $link The URL.
+     * @return string Escaped URL.
+     */
+    private function _secureLink($link) {
+        return str_replace("\\", "\\\\", $link);
+    }
+
+    private function _prepareZIP() {
+        global $conf;
+        $filename = $conf["tmpdir"] . "/output" . time() . ".zip";
+        if ($this->zip->open($filename, ZipArchive::CREATE) !== TRUE) {
+            exit("LaTeXit was not able to open <$filename>, check access rights.\n");
+        }
+    }
+
     /**
      * Function removing diacritcs from a text.
      * @param string $data Text with diacritics
