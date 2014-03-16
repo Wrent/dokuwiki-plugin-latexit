@@ -76,7 +76,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
             return $citeKey;
         } //parse RECURSIVE command
         //FIXME Wrong regex!!!
-        elseif (preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $match)) {
+        elseif (preg_match('#~~RECURSIVE~~#', $match)) {
             $tildas = explode('RECURSIVE', $match);
             if ($tildas[0] == $tildas[1]) {
                 return array($state, $tildas);
