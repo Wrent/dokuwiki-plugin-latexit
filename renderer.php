@@ -132,12 +132,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $media;
 
     /**
-     * Stores the ZipArchive objects, if neccessary.
-     * @var ZipArchive
-     */
-    private $zip;
-
-    /**
      * Make available as LaTeX renderer
      */
     public function canRender($format) {
@@ -170,6 +164,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //register global variables used for recursive rendering
         global $latexit_level;
         global $latexit_headers;
+        global $zip;
 
         //initialize variables
         $this->packages = array();
@@ -179,8 +174,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
         $this->media = FALSE;
-        $this->zip = new ZipArchive();
-        $this->_prepareZIP();
         //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
         $this->default_table_align = 'l';
 
@@ -199,6 +192,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //this tag will be replaced in the end, all required packages will be added
         $packages = '~~~PACKAGES~~~';
         if (!$this->_immersed()) {
+            $zip = new ZipArchive();
+            $this->_prepareZIP();
+
             //document is MAIN PAGE of exported file
             //this is default LaTeX header right now, can be changed in configuration
             $header_default = "\\documentclass[a4paper, oneside, 10pt]{memoir}\n"
@@ -224,6 +220,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It finalizes the document.
      */
     function document_end() {
+        global $zip;
+
+        $this->_checkMedia();
+        
+        //insert all packages collected during rendering as \usepackage
+        $this->_insertPackages();
         if (!$this->_immersed()) {
             //this is MAIN PAGE of exported file, we can finalize document
             $this->doc .= "\n\n";
@@ -235,15 +237,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->_highlightFixme();
             $this->_removeEntities();
 
-            //insert all packages collected during rendering as \usepackage
-            $this->_insertPackages();
 
             if ($this->media) {
-                $filename = $this->zip->filename;
-                $this->zip->addFromString("output.latex", $this->doc);
+                $filename = $zip->filename;
+                $zip->addFromString("output.latex", $this->doc);
                 //zip archive is created when this function is called,
                 //so if no ZIP is needed, nothing is created
-                $this->zip->close();
+                $zip->close();
 
                 header("Content-type: application/zip");
                 header("Content-Disposition: attachment; filename=" . "output" . time() . ".zip");
@@ -252,12 +252,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 header("Expires: 0");
                 readfile($filename);
                 //delete temporary zip file
-                unlink($filename); 
-           } else {
+                unlink($filename);
+            } else {
                 //set the headers, so the browsers knows, this is not the HTML file
                 header('Content-Type: application/x-latex');
                 $filename = "output" . time() . ".latex";
                 header("Content-Disposition: attachment; filename='$filename';");
+            }
+        } else {
+            if ($this->media) {
+                $this->doc .= '~~~MEDIA~~~';
             }
         }
     }
@@ -962,8 +966,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     //FIXME
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        global $zip;
+
+        //FIXME conf
+        $media_folder = "media";
         $pckg = new Package('graphicx');
-        $pckg->addCommand('\\graphicspath{{images/}}');
+        $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
         $this->_addPackage($pckg);
 
 
@@ -977,7 +985,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         $this->media = TRUE;
         $location = mediaFN($src);
-        $this->zip->addFile($location, "images/". $path);
+        $zip->addFile($location, $media_folder . "/" . $path);
 
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
         $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
@@ -1208,6 +1216,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return $data;
     }
 
+    private function _checkMedia() {
+        if (preg_match('#~~~MEDIA~~~#si', $this->doc)) {
+            $this->media = TRUE;
+            str_replace("~~~MEDIA~~~", "", $this->doc);
+        }
+    }
+
     /**
      * Function inserts package used for hyperlinks.
      */
@@ -1389,8 +1404,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     private function _prepareZIP() {
         global $conf;
+        global $zip;
+
         $filename = $conf["tmpdir"] . "/output" . time() . ".zip";
-        if ($this->zip->open($filename, ZipArchive::CREATE) !== TRUE) {
+        if ($zip->open($filename, ZipArchive::CREATE) !== TRUE) {
             exit("LaTeXit was not able to open <$filename>, check access rights.\n");
         }
     }
