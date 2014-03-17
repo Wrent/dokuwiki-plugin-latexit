@@ -27,6 +27,7 @@ require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 require_once DOKU_INC . 'inc/parserutils.php';
 require_once DOKU_INC . 'inc/pageutils.php';
 require_once DOKU_INC . 'inc/pluginutils.php';
+require_once DOKU_INC . 'inc/confutils.php';
 
 /**
  * Main latexit class, specifies how will be latex rendered
@@ -223,7 +224,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $zip;
 
         $this->_checkMedia();
-        
+
         //insert all packages collected during rendering as \usepackage
         $this->_insertPackages();
         if (!$this->_immersed()) {
@@ -964,16 +965,23 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
-    //FIXME
+    /**
+     * This function is called when an image is uploaded to DokuWiki and inserted to a page.
+     * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
+     * file in the ZIP archive.
+     * @param type $src DokuWiki source of the media.
+     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param type $align Align of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param type $height Height of the media.
+     * @param type $cache We delete cache, so we don't use this param.
+     * @param type $linking Not used.
+     */
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $zip;
 
         //FIXME conf
         $media_folder = "media";
-        $pckg = new Package('graphicx');
-        $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
-        $this->_addPackage($pckg);
-
 
         $namespaces = explode(':', $src);
         for ($i = 1; $i < count($namespaces); $i++) {
@@ -987,28 +995,40 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $location = mediaFN($src);
         $zip->addFile($location, $media_folder . "/" . $path);
 
-        //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
-        $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
-        $this->doc .= "\includegraphics{" . $path . "}";
+
+        $mime = mimetype($src);
+
+        if (substr($mime[1], 0, 5) == "image") {
+            $this->_insertImage($path, $align, $media_folder);
+        } else {
+            $this->_insertFile($path, $title, $media_folder);
+        }
     }
 
     //FIXME
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        global $conf;
+        global $zip;
         
-    }
-
-    //FIXME
-    function internalmedialink(
-    $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
-    ) {
-        var_dump($src);
-    }
-
-    //FIXME
-    function externalmedialink(
-    $src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL
-    ) {
         
+        
+        $this->media = TRUE;
+        //FIXME conf
+        $media_folder = "media";
+        
+        $filename = basename($src);
+        $location = $conf["tmpdir"]."/".$filename;
+        $path = $media_folder . "/" . $filename;
+        file_put_contents($location, file_get_contents($src));
+        $zip->addFile($location, $media_folder . "/" . $filename);
+        
+        $mime = mimetype($filename);
+
+        if (substr($mime[1], 0, 5) == "image") {
+            $this->_insertImage($filename, $align, $media_folder);
+        } else {
+            $this->_insertFile($filename, $title, $media_folder);
+        }
     }
 
     /**
@@ -1410,6 +1430,42 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if ($zip->open($filename, ZipArchive::CREATE) !== TRUE) {
             exit("LaTeXit was not able to open <$filename>, check access rights.\n");
         }
+    }
+
+    private function _insertImage($path, $align, $media_folder) {
+        $pckg = new Package('graphicx');
+        $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
+        $this->_addPackage($pckg);
+        
+        
+        //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
+        $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
+
+        if (!is_null($align)) {
+            switch ($align) {
+                case "center":
+                    $this->doc .= "\centering";
+                    break;
+                case "left":
+                    $this->doc .= '\raggedleft';
+                    break;
+                case "right":
+                    $this->doc .= '\raggedright';
+                    break;
+                default :
+                    break;
+            }
+        }
+
+        $this->doc .= "\includegraphics";
+        //FIXME conf
+        $this->doc .= '[keepaspectratio=true,width=0.8\textwidth]';
+        $this->doc .= "{" . $path . "}";
+    }
+    
+    private function _insertFile($path, $title, $media_folder) {
+        $path = $media_folder ."/".$path;
+        $this->filelink($path, $title);
     }
 
     /**
