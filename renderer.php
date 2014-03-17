@@ -835,8 +835,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $latexit_headers;
 
         //escape link title
-        $title = $this->_latexSpecialChars($title);
-
+        if (!is_array($title)) {
+            $title = $this->_latexSpecialChars($title);
+        }
         $link_original = $link;
 
         //get current namespace from current page
@@ -874,15 +875,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
             //get headers level to previous level
             $this->headers_level -= $this->last_level_increase;
         } else {
-            //FIXME refactor to one function?
             //handle internal links as they were external
-            $this->_insertLinkPackages();
-            //FIXME title pictures
-            if (is_null($title) || trim($title) == '') {
-                $this->doc .= '\\href{' . $url . '}{' . $link_original . '}';
-            } else {
-                $this->doc .= '\\href{' . $url . '}{' . $title . '}';
-            }
+            $this->_insertLink($url, $title, "internal", $link_original);
         }
         $this->recursive = FALSE;
     }
@@ -894,15 +888,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string/array $title Title, can be null or array (if it is media)
      */
     function externallink($link, $title = NULL) {
-        $title = $this->_latexSpecialChars($title);
-        $link = $this->_secureLink($link);
-        $this->_insertLinkPackages();
-        //FIXME pictures
-        if (is_null($title) || trim($title) == '') {
-            $this->doc .= '\\url{' . $link . '}';
-        } else {
-            $this->doc .= '\\href{' . $link . '}{' . $title . '}';
+        if (!is_array($title)) {
+            $title = $this->_latexSpecialChars($title);
         }
+        $link = $this->_secureLink($link);
+        $this->_insertLink($link, $title, "external");
     }
 
     //FIXME
@@ -955,14 +945,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string/array $name Name, can be null or array (if it is media)
      */
     function emaillink($address, $name = NULL) {
-        $name = $this->_latexSpecialChars($name);
-        $this->_insertLinkPackages();
-        //FIXME pictures
-        if (is_null($name) || trim($name) == '') {
-            $this->doc .= '\\href{mailto:' . $address . '}{' . $address . '}';
-        } else {
-            $this->doc .= '\\href{mailto:' . $address . '}{' . $name . '}';
+        if (!is_array($name)) {
+            $name = $this->_latexSpecialChars($name);
         }
+        $this->_insertLink($address, $name, "email");
     }
 
     /**
@@ -1009,19 +995,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $conf;
         global $zip;
-        
-        
-        
+
         $this->media = TRUE;
         //FIXME conf
         $media_folder = "media";
-        
+
         $filename = basename($src);
-        $location = $conf["tmpdir"]."/".$filename;
+        $location = $conf["tmpdir"] . "/" . $filename;
         $path = $media_folder . "/" . $filename;
         file_put_contents($location, file_get_contents($src));
         $zip->addFile($location, $media_folder . "/" . $filename);
-        
+
         $mime = mimetype($filename);
 
         if (substr($mime[1], 0, 5) == "image") {
@@ -1168,7 +1152,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Syntax of almost every LaTeX command is alway the same.
+     * Syntax of almost every basic LaTeX command is always the same.
      * @param $command The name of a LaTeX command.
      */
     private function _open($command) {
@@ -1176,7 +1160,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Closing tag of all LaTeX commands is always same and will be called
+     * Closing tag of a lot of LaTeX commands is always same and will be called
      * in almost every close function.
      */
     private function _close() {
@@ -1436,8 +1420,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
         $this->_addPackage($pckg);
-        
-        
+
+
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
         $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
 
@@ -1462,12 +1446,52 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= '[keepaspectratio=true,width=0.8\textwidth]';
         $this->doc .= "{" . $path . "}";
     }
-    
+
     private function _insertFile($path, $title, $media_folder) {
-        $path = $media_folder ."/".$path;
+        $path = $media_folder . "/" . $path;
         $this->filelink($path, $title);
     }
 
+    private function _insertLink($url, $title, $type, $link_original = NULL) {
+        $this->_insertLinkPackages();
+
+        if($type == "email") {
+            $mailto = "mailto:";
+        } else {
+            $mailto = "";
+        }
+        
+        //no title was specified
+        if (is_null($title) || (!is_array($title) && trim($title) == '')) {
+            //for internal links, original DW link is inserted as a title
+            if ($type == "internal") {
+                $this->doc .= '\\href{'.$mailto . $url . '}{' . $link_original . '}';
+            } 
+            //email links have to contain mailto and address is used as text
+            elseif ($type == "email") {
+                $this->doc .= '\\href{'.$mailto . $url . '}{' . $url . '}';
+            } 
+            //reqular external link inserts the whole URL
+            else {
+                $this->doc .= '\\url{'.$mailto . $url . '}';
+            }
+        } else {
+            //is title an image?
+            if (is_array($title)) {
+
+                $this->doc .= '\\href{'.$mailto . $url . '}{';
+                if ($title["type"] == "internalmedia") {
+                    $this->internalmedia($title["src"], $title["title"], $title["align"]);
+                } else {
+                    $this->externalmedia($title["src"], $title["title"], $title["align"]);
+                }
+                $this->doc .= '}';
+            } else {
+                $this->doc .= '\\href{'.$mailto . $url . '}{' . $title . '}';
+            }
+        }
+    }
+    
     /**
      * Function removing diacritcs from a text.
      * @param string $data Text with diacritics
