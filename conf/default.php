@@ -13,3 +13,6 @@ $conf['document_header'] = '\\documentclass[a4paper, oneside, 11pt]{memoir}
 $conf['document_footer'] = '
 ';
 $conf['document_lang'] = "english";
+$conf['title'] = "";
+$conf['author'] = "";
+$conf['date'] = 0;

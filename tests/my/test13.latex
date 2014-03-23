@@ -1,4 +1,4 @@
-\documentclass[a4paper, oneside, 10pt]{memoir}
+\documentclass[a4paper, oneside, 11pt]{memoir}
 \usepackage[utf8x]{inputenc}
 \usepackage[table]{xcolor}
 \usepackage[czech]{babel}

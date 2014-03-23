@@ -194,17 +194,24 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
-            $document_start = "\\begin{document}";
-            
-            
             $header = $this->getConf('document_header');
             $document_lang = $this->getConf('document_lang');
-            $header .= "\\usepackage[".$document_lang."]{babel}\n";
-            $this->doc .= $header . $packages . $document_start;
-            //FIXME new lines function?
-            $this->doc .= "\n\n";
-        } else {
-            //document is RECURSIVELY added file to another file
+            $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
+            $this->doc .= $header . $packages;
+            $this->_c('begin', 'document', 2);
+
+            if ($this->getConf('date') || $this->getConf('title') != "" || $this->getConf('author') != "") {
+                $this->_c('title', $this->getConf('title'));
+                $this->_c('author', $this->getConf('author'));
+                if ($this->getConf('date')) {
+                    $this->_c('date', $this->_c('today'));
+                }
+                $this->_c('maketitle');
+                $this->_c('pagebreak');
+            }
+        }
+        //document is RECURSIVELY added file to another file
+        else {
             $this->doc .= '~~~PACKAGES-START~~~';
             $this->doc .= $packages;
             $this->doc .= '~~~PACKAGES-END~~~';
@@ -223,17 +230,17 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         //insert all packages collected during rendering as \usepackage
         $this->_insertPackages();
+
+        //this is MAIN PAGE of exported file, we can finalize document
         if (!$this->_immersed()) {
-            //this is MAIN PAGE of exported file, we can finalize document
-            $this->doc .= "\n\n";
-            $document_end = "\\end{document}\n";
-            $footer = $this->getConf('document_footer');
-            $this->doc .= $footer . $document_end;
+            $this->_n(2);
+            $this->doc .= $this->getConf('document_footer');
+            $this->_c('end', 'document');
 
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
-            
+
             $output = "output" . time() . ".latex";
 
             //file to download will be ZIP archive
@@ -252,7 +259,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 readfile($filename);
                 //delete temporary zip file
                 unlink($filename);
-            } 
+            }
             //file to download will be ordinary LaTeX file
             else {
                 //set the headers, so the browsers knows, this is not the HTML file
@@ -280,7 +287,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             //when document is recursively inserted, it will continue from previous headers level
             $level += $this->headers_level;
         }
-        $this->doc .= "\n\n";
+        $this->_n(2);
         switch ($level) {
             //FIXME zakladni level headeru bude konfigurovatelny a bude odpovidat typu dokumentu
             case 1:
@@ -299,14 +306,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_header('subparagraph', $text);
                 break;
             default:
-                $this->_open('textbf');
-                $this->doc .= $this->_latexSpecialChars($text);
-                $this->_close();
-                $this->doc .= "\n";
+                $this->_c('textbf', $this->_latexSpecialChars($text));
                 break;
         }
         //add label so each section can be referenced
-        $this->doc .= "\label{" . $this->_createLabel($text) . "}";
+        $this->_c('label', $this->_createLabel($text));
     }
 
     /**
@@ -324,7 +328,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It makes new paragraph in LaTeX Document.
      */
     function p_open() {
-        $this->doc .= "\n\n";
+        $this->_n(2);
     }
 
     /**
@@ -345,10 +349,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It adds centered horizontal line in LaTeX Document.
      */
     function hr() {
-        $this->doc .= "\n\n\begin{center}\n";
+        $this->_n(2);
+        $this->_c('begin', 'center');
         $this->doc .= "\line(1,0){250}\n";
-        $this->doc .= '\end{center}';
-        $this->doc .= "\n\n";
+        $this->_c('end', 'center', 2);
     }
 
     /**
@@ -520,7 +524,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function listitem_open($level) {
         $this->last_level = $level;
         $this->_indent_list();
-        $this->doc .= "  \\item";
+        $this->doc .= "  ";
+        $this->_c('item', NULL, 0);
     }
 
     /**
@@ -528,7 +533,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * It adds newline to the latex file.
      */
     function listcontent_close() {
-        $this->doc .= "\n";
+        $this->_n();
     }
 
     /**
@@ -577,27 +582,31 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text Preformatted text.
      */
     function preformatted($text) {
-        $this->doc .= "\n\begin{verbatim}\n";
+        $this->_n();
+        $this->_c('begin', 'verbatim');
         $this->doc .= $this->_latexSpecialChars($text);
-        $this->doc .= "\n" . '\end{verbatim}' . "\n";
+        $this->_n();
+        $this->_c('end', 'verbatim');
     }
 
     /**
      * Opens the quote environment.
      */
     function quote_open() {
-        $this->doc .= "\n\begin{quote}\n";
+        $this->_n();
+        $this->_c('begin', 'quote');
     }
 
     /**
      * Closes the quote environment.
      */
     function quote_close() {
-        $this->doc .= "\n" . '\end{quote}' . "\n";
+        $this->_n();
+        $this->_c('end', 'quote');
     }
 
     /**
-     * * File tag is almost the same like the code tag, but it enables to download
+     * File tag is almost the same like the code tag, but it enables to download
      * the code directly from DW. 
      * Therefore we just add the filename to the top of code.
      * @param string $text The code itself.
@@ -632,22 +641,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->doc .= $this->_latexSpecialChars($file);
         }
         $this->_close();
-        $this->doc .= "\n";
+        $this->_n();
         //open the code block
-        $this->_open('begin');
-        $this->doc .= 'lstlisting';
-        $this->_close();
-        $this->doc .= "\n";
+        $this->_c('begin', 'lstlisting');
 
         //get rid of some non-standard characters
         $text = str_replace('”', '"', $text);
         $text = str_replace('–', '-', $text);
         $this->doc .= $text;
         //close the code block
-        $this->_open('end');
-        $this->doc .= 'lstlisting';
-        $this->_close();
-        $this->doc .= "\n\n";
+        $this->_c('end', 'lstlisting', 2);
     }
 
     /**
@@ -802,7 +805,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             $this->doc .= $this->_latexSpecialChars($hash);
         }
-        $this->doc .= ' (\autoref{' . $hash . '})';
+        $this->doc .= ' (';
+        $this->_c('autoref', $hash, 0);
+        $this->doc .= ')';
     }
 
     /**
@@ -853,15 +858,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
             //start parsing linked page
             $data = p_cached_output(wikifn($link), 'latexit');
             $data = $this->_loadPackages($data);
-            $this->doc .= "\n\n";
+            $this->_n(2);
             //insert comment to LaTeX
             $this->doc .= "%RECURSIVELY INSERTED FILE START";
-            $this->doc .= "\n\n";
+            $this->_n(2);
             $this->doc .= $data;
-            $this->doc .= "\n\n";
+            $this->_n(2);
             //insert comment to LaTeX
             $this->doc .= "%RECURSIVELY INSERTED FILE END";
-            $this->doc .= "\n\n";
+            $this->_n(2);
             //get headers level to previous level
             $this->headers_level -= $this->last_level_increase;
         } else {
@@ -1019,11 +1024,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
         //print the header
-        $this->doc .= "\\begin{longtable}{|";
+        $this->_c('begin', 'longtable',0);
+        $this->doc .= "{|";
         for ($i = 0; $i < $maxcols; $i++) {
             $this->doc .= $this->default_table_align . "|";
         }
-        $this->doc .= "}\n\hline\n";
+        $this->_close();
+        $this->_n();
+        $this->_c('hline');
     }
 
     /**
@@ -1035,7 +1043,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //close the table environment
         $this->in_table = false;
         //print the footer
-        $this->doc .= "\\end{longtable}\n\n";
+        $this->_c('end', 'longtable', 2);
     }
 
     /**
@@ -1051,9 +1059,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function tablerow_close() {
         //add syntax for end of a row
-        $this->doc .= " \\\\ \n";
+        $this->doc .= " \\\\ ";
+        $this->_n();
         //add line
-        $this->doc .= "\\hline \n";
+        $this->_c('hline');
+        $this->doc .= " ";
+        $this->_n();
     }
 
     /**
@@ -1144,9 +1155,24 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Syntax of almost every basic LaTeX command is always the same.
      * @param $command The name of a LaTeX command.
+     * @param $params Array of parameters of the command
      */
-    private function _open($command) {
-        $this->doc .= "\\" . $command . "{";
+    private function _open($command, $params = NULL, $hyphens = true) {
+        $this->doc .= "\\" . $command;
+        if (!is_null($params)) {
+            $this->doc .= '[';
+            $i = 0;
+            foreach ($params as $p) {
+                if ($i++ > 0) {
+                    $this->doc .= ',';
+                }
+                $this->doc .= $p;
+            }
+            $this->doc .= ']';
+        }
+        if ($hyphens) {
+            $this->doc .= "{";
+        }
     }
 
     /**
@@ -1155,6 +1181,26 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private function _close() {
         $this->doc .= '}';
+    }
+
+    private function _c($command, $text = NULL, $newlines = 1, $params = NULL) {
+        if (is_null($text)) {
+            $hyphens = false;
+        } else {
+            $hyphens = true;
+        }
+        $this->_open($command, $params, $hyphens);
+        if (!is_null($text)) {
+            $this->doc .= $text;
+            $this->_close();
+        }
+        $this->_n($newlines);
+    }
+
+    private function _n($cnt = 1) {
+        for ($i = 0; $i < $cnt; $i++) {
+            $this->doc .= "\n";
+        }
     }
 
     /**
@@ -1445,31 +1491,31 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private function _insertLink($url, $title, $type, $link_original = NULL) {
         $this->_insertLinkPackages();
 
-        if($type == "email") {
+        if ($type == "email") {
             $mailto = "mailto:";
         } else {
             $mailto = "";
         }
-        
+
         //no title was specified
         if (is_null($title) || (!is_array($title) && trim($title) == '')) {
             //for internal links, original DW link is inserted as a title
             if ($type == "internal") {
-                $this->doc .= '\\href{'.$mailto . $url . '}{' . $link_original . '}';
-            } 
+                $this->doc .= '\\href{' . $mailto . $url . '}{' . $link_original . '}';
+            }
             //email links have to contain mailto and address is used as text
             elseif ($type == "email") {
-                $this->doc .= '\\href{'.$mailto . $url . '}{' . $url . '}';
-            } 
+                $this->doc .= '\\href{' . $mailto . $url . '}{' . $url . '}';
+            }
             //reqular external link inserts the whole URL
             else {
-                $this->doc .= '\\url{'.$mailto . $url . '}';
+                $this->doc .= '\\url{' . $mailto . $url . '}';
             }
         } else {
             //is title an image?
             if (is_array($title)) {
 
-                $this->doc .= '\\href{'.$mailto . $url . '}{';
+                $this->doc .= '\\href{' . $mailto . $url . '}{';
                 if ($title["type"] == "internalmedia") {
                     $this->internalmedia($title["src"], $title["title"], $title["align"]);
                 } else {
@@ -1477,11 +1523,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 }
                 $this->doc .= '}';
             } else {
-                $this->doc .= '\\href{'.$mailto . $url . '}{' . $title . '}';
+                $this->doc .= '\\href{' . $mailto . $url . '}{' . $title . '}';
             }
         }
     }
-    
+
     /**
      * Function removing diacritcs from a text.
      * @param string $data Text with diacritics

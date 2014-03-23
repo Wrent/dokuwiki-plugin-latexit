@@ -53,3 +53,6 @@ $meta['document_lang'] = array('multichoice', '_choices' =>
         'uppersorbian',
         'welsh',
         ));
+$meta['title'] = array('string');
+$meta['author'] = array('string');
+$meta['date'] = array('onoff');
