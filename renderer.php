@@ -22,7 +22,7 @@ require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 
 /**
- * includes default DocuWiki files containing functions used by latexit plugin
+ * includes default DokuWiki files containing functions used by latexit plugin
  */
 require_once DOKU_INC . 'inc/parserutils.php';
 require_once DOKU_INC . 'inc/pageutils.php';
@@ -66,7 +66,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $headers_level;
 
     /**
-     * FIXME configurable
      * Is TRUE when recursive inserting should be used.
      * @var bool
      */
@@ -115,7 +114,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $in_table;
 
     /**
-     * FIXME conf
      * Stores the default table align
      * @var string
      */
@@ -129,6 +127,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Is set on true if the document contains media.
+     * @var boolean
      */
     private $media;
 
@@ -151,6 +150,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Renderer is always created as a new instance.
+     * It is required for recursive export.
      */
     public function isSingleton() {
         return false;
@@ -175,8 +175,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
         $this->media = FALSE;
-        //FIXME v konfiguraci nastavit defaultni zarovnani tabulek (zvysi pak prehlednost generovaneho kodu)
-        $this->default_table_align = 'l';
+        $this->default_table_align = $this->getConf('default_table_align');
 
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
@@ -189,24 +188,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->headers_level = $latexit_headers;
         }
 
-        //FIXME nastavit nejak hlavni title dokumentu podle title stranky?
-        //this tag will be replaced in the end, all required packages will be added
+        //this helper tag will be replaced in the end, all required packages will be added
         $packages = '~~~PACKAGES~~~';
         if (!$this->_immersed()) {
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
-            //document is MAIN PAGE of exported file
-            //this is default LaTeX header right now, can be changed in configuration
-            $header_default = "\\documentclass[a4paper, oneside, 10pt]{memoir}\n"
-                    . "\\usepackage[utf8x]{inputenc}\n"
-                    . "\\usepackage[table]{xcolor}\n"
-                    . "\\usepackage{czech}\n";
-
             $document_start = "\\begin{document}";
-            //FIXME if conf
-            $header = $header_default;
+            
+            
+            $header = $this->getConf('document_header');
+            $document_lang = $this->getConf('document_lang');
+            $header .= "\\usepackage[".$document_lang."]{babel}\n";
             $this->doc .= $header . $packages . $document_start;
+            //FIXME new lines function?
             $this->doc .= "\n\n";
         } else {
             //document is RECURSIVELY added file to another file
@@ -223,6 +218,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function document_end() {
         global $zip;
 
+        //if a media were inserted in a recursively added file, we have to push this information up
         $this->_checkMedia();
 
         //insert all packages collected during rendering as \usepackage
@@ -230,18 +226,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!$this->_immersed()) {
             //this is MAIN PAGE of exported file, we can finalize document
             $this->doc .= "\n\n";
-            $footer_default = "\\end{document}\n";
-            //FIXME if conf footer
-            $this->doc .= $footer_default;
+            $document_end = "\\end{document}\n";
+            $footer = $this->getConf('document_footer');
+            $this->doc .= $footer . $document_end;
 
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
+            
+            $output = "output" . time() . ".latex";
 
-
+            //file to download will be ZIP archive
             if ($this->media) {
                 $filename = $zip->filename;
-                $zip->addFromString("output.latex", $this->doc);
+                $zip->addFromString($output, $this->doc);
                 //zip archive is created when this function is called,
                 //so if no ZIP is needed, nothing is created
                 $zip->close();
@@ -254,27 +252,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 readfile($filename);
                 //delete temporary zip file
                 unlink($filename);
-            } else {
+            } 
+            //file to download will be ordinary LaTeX file
+            else {
                 //set the headers, so the browsers knows, this is not the HTML file
                 header('Content-Type: application/x-latex');
-                $filename = "output" . time() . ".latex";
-                header("Content-Disposition: attachment; filename='$filename';");
+                header("Content-Disposition: attachment; filename='$output';");
             }
         } else {
+            //signal to the upper document, that we inserted media to ZIP archive
             if ($this->media) {
                 $this->doc .= '~~~MEDIA~~~';
             }
         }
-    }
-
-    //FIXME muze vlozit latex obsah, ale nejspis jen podle nastaveni v konfiguraci
-    function render_TOC() {
-        return '';
-    }
-
-    //FIXME
-    function toc_additem($id, $text, $level) {
-        
     }
 
     /**

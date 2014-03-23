@@ -70,12 +70,12 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      */
     public function handle($match, $state, $pos, &$handler) {
         //parse citations from the text (this will be done by this plugin only for latex export)
+        //FIXME regex is from zotero plugin, it has to match exactly
         if (preg_match("/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/", $match, $matches)) {
             $pageRef = $matches[2];
             $citeKey = $matches[3];
             return $citeKey;
         } //parse RECURSIVE command
-        //FIXME Wrong regex!!!
         elseif (preg_match('#~~RECURSIVE~~#', $match)) {
             $tildas = explode('RECURSIVE', $match);
             if ($tildas[0] == $tildas[1]) {
