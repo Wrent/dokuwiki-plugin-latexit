@@ -194,6 +194,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
+            $params = array();
+            $params[] = $this->getConf('font_size').'pt';
+            $params[] = $this->getConf('paper_size');
+            $params[] = $this->getConf('output_format');
+            if($this->getConf('landscape')) {
+                $params[] = 'landscape';
+            }
+            if($this->getConf('draft')) {
+                $params[] = 'draft';
+            }
+            
+            $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+            
             $header = $this->getConf('document_header');
             $document_lang = $this->getConf('document_lang');
             $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
@@ -207,7 +220,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
                     $this->_c('date', $this->_c('today'));
                 }
                 $this->_c('maketitle');
-                $this->_c('pagebreak');
             }
         }
         //document is RECURSIVELY added file to another file
