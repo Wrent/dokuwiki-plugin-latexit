@@ -221,7 +221,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 }
                 $this->_c('maketitle');
             }
-            if($this->getConf('table_of_content')) {
+            if ($this->getConf('table_of_content')) {
                 $this->_c('tableofcontents', NULL, 2);
             }
         }
@@ -639,7 +639,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $file The code can be inserted to DokuWiki as a file.
      */
     function code($text, $lang = null, $file = null) {
-        //FIXME konfigurace?
         $pckg = new Package('listings');
         $this->_addPackage($pckg);
         $this->_open('lstset');
@@ -757,7 +756,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Inserts single quote opening to LaTeX depending on set language.
      */
     function singlequoteopening() {
-        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '`';
     }
 
@@ -765,7 +763,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Inserts single quote closing to LaTeX depending on set language.
      */
     function singlequoteclosing() {
-        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '\'';
     }
 
@@ -773,28 +770,37 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Inserts apostrophe to LaTeX depending on set language.
      */
     function apostrophe() {
-        //FIXME  jine jazyky viz ODT plugin
         $this->doc .= '\'';
     }
 
     /**
      * Inserts double quote opening to LaTeX depending on set language.
+     * Support for only English and Czech is implemented.
      */
     function doublequoteopening() {
-        //FIXME  jine jazyky viz ODT plugin
-        $this->doc .= ',,';
-        //$this->doc .= '\\uv{';
-        //english ``
+        switch ($this->getConf('document_lang')) {
+            case 'czech':
+                $this->_open('uv');
+                break;
+            default :
+                $this->doc .= ',,';
+                break;
+        }
     }
 
     /**
      * Inserts double quote closing to LaTeX depending on set language.
+     * Support for only English and Czech is implemented.
      */
     function doublequoteclosing() {
-        //FIXME  jine jazyky
-        $this->doc .= '"';
-        //$this->doc .= '}';
-        //english "
+        switch ($this->getConf('document_lang')) {
+            case 'czech':
+                $this->_close();
+                break;
+            default :
+                $this->doc .= '"';
+                break;
+        }
     }
 
     /**
@@ -902,11 +908,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
         $link = $this->_secureLink($link);
         $this->_insertLink($link, $title, "external");
-    }
-
-    //FIXME
-    function rss($url, $params) {
-        
     }
 
     /**
@@ -1091,13 +1092,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
         $this->tablecell_open($colspan, $align, $rowspan);
         $this->_open('textbf');
-
-        /* FIXME poresit zobrazovani techto nasledujicich prikazu
-         * \endfirsthead: Line(s) to appear as head of the table on the first page
-          \endhead: Line(s) to appear at top of every page (except first)
-          \endfoot: Last line(s) to appear at the bottom of every page (except last)
-          \endlastfoot: Last line(s) to appear at the end of the table
-         */
     }
 
     /**
@@ -1429,7 +1423,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $data Parsed text.
      */
     public function _mathMode($data) {
-        //FIXME toto je ale proti zasadam latexu
         $data = str_replace('->', '\rightarrow', $data);
         $data = str_replace('<-', '\leftarrow', $data);
         $data = str_replace('<->', '\leftrightarrow', $data);
