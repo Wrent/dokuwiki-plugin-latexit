@@ -16,6 +16,8 @@ $conf['document_header'] = '\\usepackage[utf8x]{inputenc}
 $conf['document_footer'] = '
 ';
 $conf['document_lang'] = "english";
+$conf['header_chapter'] = 0;
+$conf['header_part'] = 0;
 $conf['title'] = "";
 $conf['author'] = "";
 $conf['date'] = 0;

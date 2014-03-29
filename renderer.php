@@ -195,18 +195,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->_prepareZIP();
 
             $params = array();
-            $params[] = $this->getConf('font_size').'pt';
+            $params[] = $this->getConf('font_size') . 'pt';
             $params[] = $this->getConf('paper_size');
             $params[] = $this->getConf('output_format');
-            if($this->getConf('landscape')) {
+            if ($this->getConf('landscape')) {
                 $params[] = 'landscape';
             }
-            if($this->getConf('draft')) {
+            if ($this->getConf('draft')) {
                 $params[] = 'draft';
             }
-            
+
             $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
-            
+
             $header = $this->getConf('document_header');
             $document_lang = $this->getConf('document_lang');
             $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
@@ -294,32 +294,31 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param int $pos Not used in LaTeX
      */
     function header($text, $level, $pos) {
+        $levels = array();
+        if ($this->getConf('header_part')) {
+            $levels[] = 'part';
+        }
+        if ($this->getConf('header_chapter') && $this->getConf('document_class') != 'article') {
+            $levels[] = 'chapter';
+        }
+        array_push($levels, 'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph');
 
         if ($this->_immersed()) {
             //when document is recursively inserted, it will continue from previous headers level
             $level += $this->headers_level;
         }
         $this->_n(2);
-        switch ($level) {
-            //FIXME zakladni level headeru bude konfigurovatelny a bude odpovidat typu dokumentu
-            case 1:
-                $this->_header('section', $text);
-                break;
-            case 2:
-                $this->_header('subsection', $text);
-                break;
-            case 3:
-                $this->_header('subsubsection', $text);
-                break;
-            case 4:
-                $this->_header('paragraph', $text);
-                break;
-            case 5:
-                $this->_header('subparagraph', $text);
-                break;
-            default:
-                $this->_c('textbf', $this->_latexSpecialChars($text));
-                break;
+
+        //the array is indexed from 0
+        $level--;
+
+        if (isset($levels[$level])) {
+            $this->_header($levels[$level], $text);
+        } else {
+            //to force a newline in latex, there has to be some empty char before, e.g. ~
+            $this->doc .= '~';
+            $this->_c('newline');
+            $this->_c('textbf', $this->_latexSpecialChars($text));
         }
         //add label so each section can be referenced
         $this->_c('label', $this->_createLabel($text));
@@ -1036,7 +1035,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
         //print the header
-        $this->_c('begin', 'longtable',0);
+        $this->_c('begin', 'longtable', 0);
         $this->doc .= "{|";
         for ($i = 0; $i < $maxcols; $i++) {
             $this->doc .= $this->default_table_align . "|";
@@ -1353,9 +1352,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private function _header($level, $text) {
         $this->_open($level);
+        //pdflatex can have problems with special chars while making bookmarks
+        $this->_open('texorpdfstring');
         $this->doc .= $this->_latexSpecialChars($text);
         $this->_close();
-        $this->doc .= "\n";
+        $this->doc .= '{';
+        $this->doc .= $this->_stripDiacritics($this->_latexSpecialChars($text));
+        $this->_close();
+        $this->_close();
+        $this->_n();
     }
 
     /**
@@ -1437,9 +1442,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function creates label from a header name.
      * @param string $text A header name.
-     * @return string Label
+     * @return string Labelhea
      */
     private function _createLabel($text) {
+        $text = $this->_stripDiacritics($text);
         $text = strtolower($text);
         $text = str_replace(" ", "_", $text);
         return $text;
