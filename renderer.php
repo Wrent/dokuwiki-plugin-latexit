@@ -11,7 +11,7 @@ if (!defined('DOKU_INC'))
     die();
 
 /**
- * Latexit plugin extends class in this file
+ * Latexit plugin extends default renderer class in this file
  */
 require_once DOKU_INC . 'inc/parser/renderer.php';
 
@@ -36,7 +36,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * stores all required LaTeX packages
-     * @var array 
+     * @var array Package
      */
     private $packages;
 
@@ -177,6 +177,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->media = FALSE;
         $this->default_table_align = $this->getConf('default_table_align');
 
+        //is this recursive export calling on a subpage?
         if (!isset($latexit_level) || is_null($latexit_level)) {
             $this->recursion_level = 0;
         } else {
@@ -188,31 +189,35 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->headers_level = $latexit_headers;
         }
 
-        //this helper tag will be replaced in the end, all required packages will be added
+        //this helper tag will be replaced in the end with all required packages
         $packages = '~~~PACKAGES~~~';
+        //export of the main document
         if (!$this->_immersed()) {
+            //prepare ZIP archive (will not be created, if it isn't necessary)
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
-            $params = array();
-            $params[] = $this->getConf('font_size') . 'pt';
-            $params[] = $this->getConf('paper_size');
-            $params[] = $this->getConf('output_format');
+            //get document settings
+            $params = array($this->getConf('font_size') . 'pt',
+                $this->getConf('paper_size'),
+                $this->getConf('output_format'));
             if ($this->getConf('landscape')) {
                 $params[] = 'landscape';
             }
             if ($this->getConf('draft')) {
                 $params[] = 'draft';
             }
-
-            $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
-
             $header = $this->getConf('document_header');
             $document_lang = $this->getConf('document_lang');
+
+            //print document settings
+            $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+
             $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
             $this->doc .= $header . $packages;
             $this->_c('begin', 'document', 2);
 
+            //if title or author or date is set, it prints it
             if ($this->getConf('date') || $this->getConf('title') != "" || $this->getConf('author') != "") {
                 $this->_c('title', $this->getConf('title'));
                 $this->_c('author', $this->getConf('author'));
@@ -221,6 +226,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 }
                 $this->_c('maketitle');
             }
+            //if table of contents should be displayed, it prints it
             if ($this->getConf('table_of_content')) {
                 $this->_c('tableofcontents', NULL, 2);
             }
@@ -281,7 +287,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 header('Content-Type: application/x-latex');
                 header("Content-Disposition: attachment; filename='$output';");
             }
-        } else {
+        }
+        //this is RECURSIVELY added file    
+        else {
             //signal to the upper document, that we inserted media to ZIP archive
             if ($this->media) {
                 $this->doc .= '~~~MEDIA~~~';
@@ -297,6 +305,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param int $pos Not used in LaTeX
      */
     function header($text, $level, $pos) {
+        //set the types of headers to be used depending on configuration
         $levels = array();
         if ($this->getConf('header_part')) {
             $levels[] = 'part';
@@ -312,18 +321,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
         $this->_n(2);
 
-        //the array is indexed from 0
+        //the array of levels is indexed from 0
         $level--;
 
+        //such a level exists in the array
         if (isset($levels[$level])) {
             $this->_header($levels[$level], $text);
-        } else {
+        }
+        //level not in array, use default
+        else {
             //to force a newline in latex, there has to be some empty char before, e.g. ~
             $this->doc .= '~';
             $this->_c('newline');
             $this->_c('textbf', $this->_latexSpecialChars($text));
         }
-        //add label so each section can be referenced
+        //add a label, so each section can be referenced
         $this->_c('label', $this->_createLabel($text));
     }
 
@@ -641,6 +653,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function code($text, $lang = null, $file = null) {
         $pckg = new Package('listings');
         $this->_addPackage($pckg);
+
+        //start code block
         $this->_open('lstset');
         $this->doc .= 'frame=single';
         if (!is_null($lang)) {
@@ -833,7 +847,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when renderer finds an internal link
      * It resolves the internal link (namespaces, URL)
-     * Depending on the configuration:
+     * Depending on the configuration (inside the document):
      *     It handles link as an external and calls proper function in LaTeX depending on the title
      *     It recursively adds the linked page to the exported LaTeX file
      * This feature is not in classic plugin configuration.
@@ -858,8 +872,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //get current namespace from current page
         $current_namespace = getNS($ID);
         //get the page ID with right namespaces
-        //$exists stores information, if the page exists. We don't care about that right now. FIXME?
+        //$exists stores information, if the page exists.
         resolve_pageid($current_namespace, $link, $exists);
+
+        //if the page does not exist, just insert it as common text
+        if (!$exists) {
+            $this->doc .= $title;
+            return;
+        }
 
         $params = '';
         $absoluteURL = true;
@@ -869,19 +889,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //FIXME keep hash in the end? have to test!
         //FIXME s hashem na konci by se dalo odkazovat na jednotlive sekce dokumentu
         //teoreticky by se tak dal resit i potencialni rekurze
-        //FIXME configurable
         if ($this->recursive) {
             //FIXME bacha na nekonecnou rekurzi
+            //the level of recursion is increasing
             $latexit_level = $this->recursion_level + 1;
             $latexit_headers = $this->headers_level;
 
-            //start parsing linked page
+            //start parsing linked page - call the latexit plugin again
             $data = p_cached_output(wikifn($link), 'latexit');
+            //get packages from the parsed file
             $data = $this->_loadPackages($data);
             $this->_n(2);
             //insert comment to LaTeX
             $this->doc .= "%RECURSIVELY INSERTED FILE START";
             $this->_n(2);
+            //insert parsed data
             $this->doc .= $data;
             $this->_n(2);
             //insert comment to LaTeX
@@ -889,8 +911,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->_n(2);
             //get headers level to previous level
             $this->headers_level -= $this->last_level_increase;
-        } else {
-            //handle internal links as they were external
+        }
+        //handle internal links as they were external
+        else {
             $this->_insertLink($url, $title, "internal", $link_original);
         }
         $this->recursive = FALSE;
@@ -967,9 +990,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * file in the ZIP archive.
      * @param type $src DokuWiki source of the media.
      * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
-     * @param type $align Align of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param type $align Align of the media. 
      * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $height Height of the media.
+     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
      * @param type $cache We delete cache, so we don't use this param.
      * @param type $linking Not used.
      */
@@ -978,6 +1001,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         $media_folder = $this->getConf('media_folder');
 
+        //the namespace structure is kept in folder structure in ZIP archive
         $namespaces = explode(':', $src);
         for ($i = 1; $i < count($namespaces); $i++) {
             if ($i != 1) {
@@ -986,13 +1010,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $path .= $namespaces[$i];
         }
 
+        //exported file will be ZIP archive
         $this->media = TRUE;
+        //find media on FS
         $location = mediaFN($src);
+        //add media to ZIP archive
         $zip->addFile($location, $media_folder . "/" . $path);
 
 
         $mime = mimetype($src);
-
         if (substr($mime[1], 0, 5) == "image") {
             $this->_insertImage($path, $align, $media_folder);
         } else {
@@ -1000,7 +1026,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
-    //FIXME
+    /**
+     * This function is called when an image from the internet is inserted to a page.
+     * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
+     * file in the ZIP archive.
+     * @param type $src URL source of the media.
+     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param type $align Align of the media. 
+     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param type $cache We delete cache, so we don't use this param.
+     * @param type $linking Not used.
+     */
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $conf;
         global $zip;
@@ -1008,11 +1045,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->media = TRUE;
         $media_folder = $this->getConf('media_folder');
 
+        //get just the name of file without path
         $filename = basename($src);
+        //download the file to the DokuWiki TEMP folder
         $location = $conf["tmpdir"] . "/" . $filename;
-        $path = $media_folder . "/" . $filename;
         file_put_contents($location, file_get_contents($src));
-        $zip->addFile($location, $media_folder . "/" . $filename);
+        //add file to the ZIP archive
+        $path = $media_folder . "/" . $filename;
+        $zip->addFile($location, $path);
 
         $mime = mimetype($filename);
 
@@ -1032,10 +1072,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function table_open($maxcols = null, $numrows = null, $pos = null) {
         $this->table_cols = $maxcols;
+        
         //set environment to tables
         $this->in_table = true;
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
+        
         //print the header
         $this->_c('begin', 'longtable', 0);
         $this->doc .= "{|";
@@ -1107,7 +1149,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param int $rowspan Sets rows[am of the cell.
      */
     function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
-        if ($align == NULL) {
+        if (is_null($align)) {
             $align = $this->default_table_align;
         } else {
             //in DW align is left, right, center, in LaTeX just first letter
@@ -1162,9 +1204,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Syntax of almost every basic LaTeX command is always the same.
      * @param $command The name of a LaTeX command.
      * @param $params Array of parameters of the command
+     * @param $brackets boolean Tells if the brackets should be used.
      */
-    private function _open($command, $params = NULL, $hyphens = true) {
+    private function _open($command, $params = NULL, $brackets = true) {
         $this->doc .= "\\" . $command;
+        //if params are set, print them all
         if (!is_null($params)) {
             $this->doc .= '[';
             $i = 0;
@@ -1176,7 +1220,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             }
             $this->doc .= ']';
         }
-        if ($hyphens) {
+        if ($brackets) {
             $this->doc .= "{";
         }
     }
@@ -1189,13 +1233,23 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc .= '}';
     }
 
+    /**
+     * Helper function for printing almost all regular commands in LaTeX.
+     * It can also print newlines after command and it supports parameters.
+     * @param string $command Name of the command.
+     * @param string $text Text to insert into the brackets.
+     * @param int $newlines How many newlines after the command to insert.
+     * @param array $params Array of parameters to be inserted. 
+     */
     private function _c($command, $text = NULL, $newlines = 1, $params = NULL) {
+        //if there is no text, there will be no brackets
         if (is_null($text)) {
-            $hyphens = false;
+            $brackets = false;
         } else {
-            $hyphens = true;
+            $brackets = true;
         }
-        $this->_open($command, $params, $hyphens);
+        $this->_open($command, $params, $brackets);
+        //if there is no text, there is nothing to be closed
         if (!is_null($text)) {
             $this->doc .= $text;
             $this->_close();
@@ -1203,6 +1257,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->_n($newlines);
     }
 
+    /**
+     * Function inserting new lines in the LaTeX file.
+     * @param int $cnt How many new lines to insert.
+     */
     private function _n($cnt = 1) {
         for ($i = 0; $i < $cnt; $i++) {
             $this->doc .= "\n";
@@ -1227,7 +1285,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private function _insertPackages() {
         //if the page is recursively inserted, packages will have to be added to the parent document
-        //they are serilized in the exported subfile
+        //they are serilized in the exported subfile and then loaded again.
         if ($this->_immersed()) {
             $packages = serialize($this->packages);
         } else {
@@ -1244,7 +1302,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Function used for inserting packages from recursively inserted pages to the main page
-     * It loads packages from given data and adds them as a packages.
+     * It loads packages from given data and adds them as packages.
      * @param string $data Parsed subpage.
      * @return string Parsed subpage without packages data (and with packages loaded)
      */
@@ -1262,9 +1320,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return $data;
     }
 
+    /**
+     * Function checks, if there were media added in a subfile.
+     */
     private function _checkMedia() {
+        //check
         if (preg_match('#~~~MEDIA~~~#si', $this->doc)) {
             $this->media = TRUE;
+            //and delete any traces
             str_replace("~~~MEDIA~~~", "", $this->doc);
         }
     }
@@ -1287,6 +1350,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->_n();
         if ($this->list_opened) {
             for ($i = 1; $i < $this->last_level + 1; $i++) {
+                //indention
                 $this->doc .= '  ';
             }
         } else {
@@ -1307,10 +1371,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->_indent_list();
         $this->_c('end', $command);
     }
+    
+    /**
+     * Indents the list according to the last seen level.
+     */
+    private function _indent_list() {
+        for ($i = 1; $i < $this->last_level; $i++) {
+            $this->doc .= '  ';
+        }
+    }
 
     /**
-     * This function highlights fix me DW command.
+     * This function highlights fixme DW command.
      * This format is used in some DokuWiki instances.
+     * FIXME insert into documentation
      * format is: FIXME[author](description of a thing to fix)
      * (this feature comes from CCM at FIT CVUT, for whom I write the plugin)
      */
@@ -1331,14 +1405,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return '{FIXME[' . $matches[1] . '](' . $matches[2] . ')}';
     }
 
-    /**
-     * Indents the list according to the last seen level.
-     */
-    private function _indent_list() {
-        for ($i = 1; $i < $this->last_level; $i++) {
-            $this->doc .= '  ';
-        }
-    }
 
     /**
      * Insert header to the LaTeX document with right level command.
@@ -1348,6 +1414,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private function _header($level, $text) {
         $this->_open($level);
         //pdflatex can have problems with special chars while making bookmarks
+        //this is the fix
         $this->_open('texorpdfstring');
         $this->doc .= $this->_latexSpecialChars($text);
         $this->_close();
@@ -1436,7 +1503,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function creates label from a header name.
      * @param string $text A header name.
-     * @return string Labelhea
+     * @return string Label
      */
     private function _createLabel($text) {
         $text = $this->_stripDiacritics($text);
@@ -1454,16 +1521,29 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return str_replace("\\", "\\\\", $link);
     }
 
+    /**
+     * Prepares the ZIP archive.
+     * @global string $conf global dokuwiki configuration
+     * @global ZipArchive $zip pointer to our zip archive
+     */
     private function _prepareZIP() {
         global $conf;
         global $zip;
 
+        //generate filename
         $filename = $conf["tmpdir"] . "/output" . time() . ".zip";
+        //create ZIP archive
         if ($zip->open($filename, ZipArchive::CREATE) !== TRUE) {
             exit("LaTeXit was not able to open <$filename>, check access rights.\n");
         }
     }
 
+    /**
+     * Function prints the image command into the LaTeX file.
+     * @param string $path relative path of the image.
+     * @param string $align image align
+     * @param string $media_folder path to the media folder.
+     */
     private function _insertImage($path, $align, $media_folder) {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
@@ -1473,6 +1553,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
         $path = preg_replace("/\\.[^.\\s]{3,4}$/", "", $path);
 
+        //print align command
         if (!is_null($align)) {
             switch ($align) {
                 case "center":
@@ -1488,15 +1569,28 @@ class renderer_plugin_latexit extends Doku_Renderer {
                     break;
             }
         }
-
+        //insert image with params from config.
         $this->_c('includegraphics', $path, 1, $this->getConf('image_params'));
     }
 
+    /**
+     * Inserts a link to media file other from an image.
+     * @param string $path Relative path to the file.
+     * @param string $title Title of the link.
+     * @param string $media_folder Location of media folder.
+     */
     private function _insertFile($path, $title, $media_folder) {
         $path = $media_folder . "/" . $path;
         $this->filelink($path, $title);
     }
 
+    /**
+     * General function for inserting links
+     * @param string $url Link URL.
+     * @param string $title Link title.
+     * @param string $type Link type (internal/external/email)
+     * @param string $link_original Original link (for internal links it is used as a title)
+     */
     private function _insertLink($url, $title, $type, $link_original = NULL) {
         $this->_insertLinkPackages();
 
@@ -1523,7 +1617,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             //is title an image?
             if (is_array($title)) {
-
                 $this->doc .= '\\href{' . $mailto . $url . '}{';
                 if ($title["type"] == "internalmedia") {
                     $this->internalmedia($title["src"], $title["title"], $title["align"]);
@@ -1539,6 +1632,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Function removing diacritcs from a text.
+     * From http://cs.wikibooks.org/wiki/PHP_prakticky/Odstran%C4%9Bn%C3%AD_diakritiky
      * @param string $data Text with diacritics
      * @return string Text withou diacritics
      */
