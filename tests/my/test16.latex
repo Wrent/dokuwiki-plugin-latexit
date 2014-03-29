@@ -1,16 +1,15 @@
-\documentclass[a4paper, oneside, 11pt]{memoir}
+\documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
-\usepackage[table]{xcolor}
 \usepackage[czech]{babel}
 \usepackage[unicode]{hyperref}
 \begin{document}
 
-\section{LocalLink}
+\section{\texorpdfstring{LocalLink}{LocalLink}}
 \label{locallink}
 
 This section (\autoref{locallink})
 
-\section{Another link}
+\section{\texorpdfstring{Another link}{Another link}}
 \label{another_link}
 
 This section (\autoref{another_link})

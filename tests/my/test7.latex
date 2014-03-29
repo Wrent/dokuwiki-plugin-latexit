@@ -1,28 +1,38 @@
-\documentclass[a4paper, oneside, 11pt]{memoir}
+\documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
-\usepackage[table]{xcolor}
 \usepackage[czech]{babel}
-\usepackage[normalem]{ulem}
 \usepackage[unicode]{hyperref}
+\usepackage[normalem]{ulem}
 \begin{document}
 
-\section{Kořenový dokument}
-\label{kořenový_dokument}
+\section{\texorpdfstring{Kořenový dokument}{Korenovy dokument}}
+\label{korenovy_dokument}
 Text kořenového dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
-\subsection{Vnořený dokument}
-\label{vnořený_dokument}
+\subsection{\texorpdfstring{Vnořený dokument}{Vnoreny dokument}}
+\label{vnoreny_dokument}
 
 Text vnořeného dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
-\subsubsection{Vnořený dokument 2}
-\label{vnořený_dokument_2}
+\subsubsection{\texorpdfstring{Vnořený dokument 2}{Vnoreny dokument 2}}
+\label{vnoreny_dokument_2}
 
 Text vnořeného dokumentu 2
+
+\paragraph{\texorpdfstring{aařa}{aara}}
+\label{aara}
+\subparagraph{\texorpdfstring{bbřb}{bbrb}}
+\label{bbrb}
+~\newline
+\textbf{ccřc}
+\label{ccrc}
+~\newline
+\textbf{ddřd}
+\label{ddrd}
 
 \sout{deleted}
 

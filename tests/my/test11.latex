@@ -1,12 +1,10 @@
-\documentclass[a4paper, oneside, 11pt]{memoir}
+\documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
-\usepackage[table]{xcolor}
 \usepackage[czech]{babel}
 \usepackage{soul}
 \begin{document}
 
 \hl{FIXME}
-
 
 \hl{FIXME[AK](test case)}
 

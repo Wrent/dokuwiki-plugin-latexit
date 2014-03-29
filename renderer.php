@@ -198,9 +198,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->_prepareZIP();
 
             //get document settings
-            $params = array($this->getConf('font_size') . 'pt',
+            $params = array(
                 $this->getConf('paper_size'),
-                $this->getConf('output_format'));
+                $this->getConf('output_format'),
+                $this->getConf('font_size') . 'pt',);
             if ($this->getConf('landscape')) {
                 $params[] = 'landscape';
             }
@@ -273,7 +274,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $zip->close();
 
                 header("Content-type: application/zip");
-                header("Content-Disposition: attachment; filename=" . "output" . time() . ".zip");
+                header("Content-Disposition: attachment; filename=output" . time() . ".zip");
                 header("Content-length: " . filesize($filename));
                 header("Pragma: no-cache");
                 header("Expires: 0");
@@ -305,6 +306,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param int $pos Not used in LaTeX
      */
     function header($text, $level, $pos) {
+        //package hyperref will enable PDF bookmarks
+        $package = new Package('hyperref');
+        $package->addParameter('unicode');
+        $this->_addPackage($package);
+        
         //set the types of headers to be used depending on configuration
         $levels = array();
         if ($this->getConf('header_part')) {
@@ -1053,7 +1059,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //add file to the ZIP archive
         $path = $media_folder . "/" . $filename;
         $zip->addFile($location, $path);
-
+             
         $mime = mimetype($filename);
 
         if (substr($mime[1], 0, 5) == "image") {
@@ -1214,7 +1220,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $i = 0;
             foreach ($params as $p) {
                 if ($i++ > 0) {
-                    $this->doc .= ',';
+                    $this->doc .= ', ';
                 }
                 $this->doc .= $p;
             }
@@ -1570,7 +1576,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             }
         }
         //insert image with params from config.
-        $this->_c('includegraphics', $path, 1, $this->getConf('image_params'));
+        $this->_c('includegraphics', $path, 1, array($this->getConf('image_params')));
     }
 
     /**

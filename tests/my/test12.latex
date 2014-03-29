@@ -1,16 +1,19 @@
-\documentclass[a4paper, oneside, 11pt]{memoir}
+\documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
-\usepackage[table]{xcolor}
 \usepackage[czech]{babel}
 \begin{document}
 
 
 
 $\rightarrow$ $\leftarrow$ $\leftrightarrow$ $\Rightarrow$ $\Leftarrow$ $\Leftrightarrow$ \textgreater \textgreater  \textless \textless  -- --- $640 \times 480$ \copyright  \texttrademark  \textregistered 
-,,He thought 'It's a man's world'..."
+\uv{He thought 'It's a man's world'...}
 
 \begin{center}
 \line(1,0){250}
 \end{center}
+
+
+
+'Ahoj'
 
 \end{document}

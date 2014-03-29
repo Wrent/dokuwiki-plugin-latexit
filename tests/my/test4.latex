@@ -1,18 +1,18 @@
-\documentclass[a4paper, oneside, 11pt]{memoir}
+\documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
-\usepackage[table]{xcolor}
 \usepackage[czech]{babel}
+\usepackage[unicode]{hyperref}
 \begin{document}
 
-\section{Nadpis 1}
+\section{\texorpdfstring{Nadpis 1}{Nadpis 1}}
 \label{nadpis_1}
-\subsection{Nadpis 2}
+\subsection{\texorpdfstring{Nadpis 2}{Nadpis 2}}
 \label{nadpis_2}
-\subsubsection{Nadpis 3}
+\subsubsection{\texorpdfstring{Nadpis 3}{Nadpis 3}}
 \label{nadpis_3}
-\paragraph{Nadpis 4}
+\paragraph{\texorpdfstring{Nadpis 4}{Nadpis 4}}
 \label{nadpis_4}
-\subparagraph{Nadpis 5}
+\subparagraph{\texorpdfstring{Nadpis 5}{Nadpis 5}}
 \label{nadpis_5}
 
 \end{document}
