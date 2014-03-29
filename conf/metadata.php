@@ -70,4 +70,6 @@ $meta['date'] = array('onoff');
 $meta['table_of_content'] = array('onoff');
 $meta['media_folder'] = array('string');
 $meta['image_params'] = '';
+$meta['bibliography_style'] = array('string');
+$meta['bibliography_name'] = array('string');
 $meta['default_table_align'] = array('multichoice', '_choices' => array('l', 'c', 'r'));

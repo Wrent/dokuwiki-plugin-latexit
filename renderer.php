@@ -20,6 +20,7 @@ require_once DOKU_INC . 'inc/parser/renderer.php';
  */
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
+require_once DOKU_INC . 'lib/plugins/latexit/classes/BibHandler.php';
 
 /**
  * includes default DokuWiki files containing functions used by latexit plugin
@@ -114,12 +115,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $in_table;
 
     /**
-     * Stores the default table align
-     * @var string
-     */
-    private $default_table_align;
-
-    /**
      * An instance of a RowspanHandler class.
      * @var RowspanHandler
      */
@@ -130,6 +125,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var boolean
      */
     private $media;
+    
+    /**
+     * Is there any Zotero bibliography?
+     * @var Bool 
+     */
+    private $bibliography;
+    
+    /**
+     * Stores the instance of BibHandler
+     * @var BibHandler 
+     */
+    private $bib_handler;
 
     /**
      * Make available as LaTeX renderer
@@ -175,7 +182,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->last_level_increase = 0;
         $this->rowspan_handler = new RowspanHandler();
         $this->media = FALSE;
-        $this->default_table_align = $this->getConf('default_table_align');
+        $this->bibliography = FALSE;
+        $this->bib_handler = NULL;
 
         //is this recursive export calling on a subpage?
         if (!isset($latexit_level) || is_null($latexit_level)) {
@@ -256,6 +264,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //this is MAIN PAGE of exported file, we can finalize document
         if (!$this->_immersed()) {
             $this->_n(2);
+            
+            if($this->bibliography) {
+                $this->_c('bibliographystyle',$this->getConf('bibliography_style'));
+                $this->_c('bibliography',$this->getConf('bibliography_name'), 2);
+            }
+            
             $this->doc .= $this->getConf('document_footer');
             $this->_c('end', 'document');
 
@@ -266,8 +280,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $output = "output" . time() . ".latex";
 
             //file to download will be ZIP archive
-            if ($this->media) {
+            if ($this->media || $this->bibliography) {
                 $filename = $zip->filename;
+                if($this->bibliography) {
+                    $zip->addFromString($this->getConf('bibliography_name').'.bib', $this->bib_handler->getBibtex());
+                }
                 $zip->addFromString($output, $this->doc);
                 //zip archive is created when this function is called,
                 //so if no ZIP is needed, nothing is created
@@ -1088,7 +1105,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->_c('begin', 'longtable', 0);
         $this->doc .= "{|";
         for ($i = 0; $i < $maxcols; $i++) {
-            $this->doc .= $this->default_table_align . "|";
+            $this->doc .= $this->getConf('default_table_align') . "|";
         }
         $this->_close();
         $this->_n();
@@ -1156,7 +1173,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function tablecell_open($colspan = 1, $align = NULL, $rowspan = 1) {
         if (is_null($align)) {
-            $align = $this->default_table_align;
+            $align = $this->getConf('default_table_align');
         } else {
             //in DW align is left, right, center, in LaTeX just first letter
             $align = substr($align, 0, 1);
@@ -1174,7 +1191,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
 
         //colspan or not default align
-        if ($colspan != 1 || $align != $this->default_table_align) {
+        if ($colspan != 1 || $align != $this->getConf('default_table_align')) {
             $this->doc .= "\\multicolumn{" . $colspan . "}{|$align|}{";
         }
         //start a new rowspan using RowspanHandler
@@ -1191,7 +1208,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function tablecell_close() {
         //colspan or align different from default has been set in this cell
-        if ($this->last_colspan != 1 || $this->last_align != $this->default_table_align) {
+        if ($this->last_colspan != 1 || $this->last_align != $this->getConf('default_table_align')) {
             $this->doc .= "}";
         }
         //rowspan has been set in this cell
@@ -1635,6 +1652,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
             }
         }
     }
+
+    public function _bibEntry($entry) {
+        $this->bibliography = TRUE;
+        if(is_null($this->bib_handler)) {
+            $this->bib_handler = new BibHandler();
+        }
+        $this->bib_handler->insert($entry);
+    }
+
 
     /**
      * Function removing diacritcs from a text.

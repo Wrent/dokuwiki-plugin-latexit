@@ -113,6 +113,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
             //insert citation
             else {
                 $renderer->doc .= '\\cite{' . $data . '}';
+                $renderer->_bibEntry($data);
             }
             return true;
         }
