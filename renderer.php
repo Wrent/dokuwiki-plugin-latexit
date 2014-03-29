@@ -975,9 +975,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $zip;
-
-        //FIXME conf
-        $media_folder = "media";
+        
+        $media_folder = $this->getConf('media_folder');
 
         $namespaces = explode(':', $src);
         for ($i = 1; $i < count($namespaces); $i++) {
@@ -1007,8 +1006,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $zip;
 
         $this->media = TRUE;
-        //FIXME conf
-        $media_folder = "media";
+        $media_folder = $this->getConf('media_folder');
 
         $filename = basename($src);
         $location = $conf["tmpdir"] . "/" . $filename;

@@ -22,4 +22,5 @@ $conf['title'] = "";
 $conf['author'] = "";
 $conf['date'] = 0;
 $conf['table_of_content'] = 0;
+$conf['media_folder'] = 'media';
 $conf['default_table_align'] = 'l';
