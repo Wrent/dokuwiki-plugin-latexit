@@ -67,4 +67,5 @@ $meta['header_part'] = array('onoff');
 $meta['title'] = array('string');
 $meta['author'] = array('string');
 $meta['date'] = array('onoff');
+$meta['table_of_content'] = array('onoff');
 $meta['default_table_align'] = array('multichoice', '_choices' => array('l', 'c', 'r'));

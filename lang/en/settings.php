@@ -21,5 +21,6 @@ $lang['header_part'] = 'Check, if you want to use \part level header.';
 $lang['title'] = 'If you want to use a document title at start of the document, fill it in here.';
 $lang['author'] = 'If you want to use an author\'s name at start of the document, fill it in here.';
 $lang['date'] = 'Check, if you want to see the date at start of the document.';
+$lang['table_of_content'] = 'Check, if you want to see the table of content at start of the document.';
 $lang['default_table_align'] = 'Sets the default align of cells in tables. As in LaTeX, '
         . 'l stands for left, c stands for center and r for right.';

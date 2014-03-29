@@ -221,6 +221,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 }
                 $this->_c('maketitle');
             }
+            if($this->getConf('table_of_content')) {
+                $this->_c('tableofcontents', NULL, 2);
+            }
         }
         //document is RECURSIVELY added file to another file
         else {
