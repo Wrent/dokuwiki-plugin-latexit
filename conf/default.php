@@ -23,4 +23,5 @@ $conf['author'] = "";
 $conf['date'] = 0;
 $conf['table_of_content'] = 0;
 $conf['media_folder'] = 'media';
+$conf['image_params'] = 'keepaspectratio=true,width=0.8\textwidth';
 $conf['default_table_align'] = 'l';

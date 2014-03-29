@@ -975,7 +975,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $zip;
-        
+
         $media_folder = $this->getConf('media_folder');
 
         $namespaces = explode(':', $src);
@@ -1284,7 +1284,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $command Proper LaTeX list command
      */
     private function _list_open($command) {
-        $this->doc .= "\n";
+        $this->_n();
         if ($this->list_opened) {
             for ($i = 1; $i < $this->last_level + 1; $i++) {
                 $this->doc .= '  ';
@@ -1293,7 +1293,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->list_opened = TRUE;
         }
         $this->_indent_list();
-        $this->doc .= "\\begin{" . $command . "}\n";
+        $this->_c('begin', $command);
     }
 
     /**
@@ -1305,7 +1305,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->list_opened = FALSE;
         }
         $this->_indent_list();
-        $this->doc .= "\\end{" . $command . "}\n";
+        $this->_c('end', $command);
     }
 
     /**
@@ -1476,23 +1476,20 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!is_null($align)) {
             switch ($align) {
                 case "center":
-                    $this->doc .= "\centering";
+                    $this->_c('centering', NULL, 0);
                     break;
                 case "left":
-                    $this->doc .= '\raggedleft';
+                    $this->_c('raggedleft', NULL, 0);
                     break;
                 case "right":
-                    $this->doc .= '\raggedright';
+                    $this->_c('raggedright', NULL, 0);
                     break;
                 default :
                     break;
             }
         }
 
-        $this->doc .= "\includegraphics";
-        //FIXME conf
-        $this->doc .= '[keepaspectratio=true,width=0.8\textwidth]';
-        $this->doc .= "{" . $path . "}";
+        $this->_c('includegraphics', $path, 1, $this->getConf('image_params'));
     }
 
     private function _insertFile($path, $title, $media_folder) {

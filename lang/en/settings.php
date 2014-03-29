@@ -23,5 +23,6 @@ $lang['author'] = 'If you want to use an author\'s name at start of the document
 $lang['date'] = 'Check, if you want to see the date at start of the document.';
 $lang['table_of_content'] = 'Check, if you want to see the table of content at start of the document.';
 $lang['media_folder'] = 'Set the name of media folder in the exported ZIP archive.';
+$lang['image_params'] = 'Set the default parameters for image insertion.';
 $lang['default_table_align'] = 'Sets the default align of cells in tables. As in LaTeX, '
         . 'l stands for left, c stands for center and r for right.';
