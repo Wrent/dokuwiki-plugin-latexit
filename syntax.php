@@ -98,7 +98,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
         $level = -1 * strlen($data[1][0]) + 7;
         if ($mode == 'xhtml') {
             if (is_array($data)) {
-                $renderer->doc .= '<h' . $level . '>Next link recursively inserted</h' . $level . '>';
+                $renderer->doc .= '<h' . $level . '>'.$this->getConf('link_insertion_message').'</h' . $level . '>';
             }
             return true;
         } elseif ($mode == 'latex') {

@@ -26,4 +26,5 @@ $conf['media_folder'] = 'media';
 $conf['image_params'] = 'keepaspectratio=true,width=0.8\textwidth';
 $conf['bibliography_style'] = 'plain';
 $conf['bibliography_name'] = 'bibliography';
+$conf['link_insertion_message'] = "Next link is recursively inserted.";
 $conf['default_table_align'] = 'l';

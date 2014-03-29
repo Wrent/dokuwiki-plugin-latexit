@@ -14,8 +14,17 @@ class BibHandler {
     private $key;
     private $repository;
     private $bib_entries;
+    private static $instance;
+    
+    public static function getInstance() {
+        if(!isset(BibHandler::$instance)) {
+            BibHandler::$instance = new BibHandler();
+        }
+        return BibHandler::$instance;
+    }
 
-    public function __construct() {
+
+    private function __construct() {
         global $conf;
         $this->bib_entries = array();
 

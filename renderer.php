@@ -816,9 +816,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function doublequoteopening() {
         switch ($this->getConf('document_lang')) {
-            case 'czech':
+            /*This is bugging, DW parses it strangely... FIXME consultation
+             * case 'czech':
                 $this->_open('uv');
-                break;
+                break;*/
             default :
                 $this->doc .= ',,';
                 break;
@@ -831,9 +832,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function doublequoteclosing() {
         switch ($this->getConf('document_lang')) {
+            /*This is bugging, DW parses it strangely... FIXME consultation
             case 'czech':
                 $this->_close();
-                break;
+                break;*/
             default :
                 $this->doc .= '"';
                 break;
@@ -1439,10 +1441,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //pdflatex can have problems with special chars while making bookmarks
         //this is the fix
         $this->_open('texorpdfstring');
+        $text = str_replace("\"", "", $text);
         $this->doc .= $this->_latexSpecialChars($text);
         $this->_close();
         $this->doc .= '{';
-        $this->doc .= $this->_stripDiacritics($this->_latexSpecialChars($text));
+        $this->doc .= $this->_pdfString($text);
         $this->_close();
         $this->_close();
         $this->_n();
@@ -1529,9 +1532,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @return string Label
      */
     private function _createLabel($text) {
+        $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $text);
         $text = $this->_stripDiacritics($text);
         $text = strtolower($text);
         $text = str_replace(" ", "_", $text);
+        $text = $this->_removeMathAndSymbols($text);
         return $text;
     }
 
@@ -1656,13 +1661,25 @@ class renderer_plugin_latexit extends Doku_Renderer {
     public function _bibEntry($entry) {
         $this->bibliography = TRUE;
         if(is_null($this->bib_handler)) {
-            $this->bib_handler = new BibHandler();
+            $this->bib_handler = BibHandler::getInstance();
         }
         $this->bib_handler->insert($entry);
     }
 
+    private function _pdfString($text) {
+        $text = $this->_stripDiacritics($this->_latexSpecialChars($text));
+        $text = $this->_removeMathAndSymbols($text);
+        return $text;
+    }
 
-    /**
+    private function _removeMathAndSymbols($text) {
+        $text = preg_replace("#\$(.*)\$#", "", $text);
+        //http://stackoverflow.com/questions/5199133/function-to-return-only-alpha-numeric-characters-from-string
+        $text = preg_replace("/[^a-zA-Z0-9_ ]+/", "", $text);
+        return $text;
+    }
+
+        /**
      * Function removing diacritcs from a text.
      * From http://cs.wikibooks.org/wiki/PHP_prakticky/Odstran%C4%9Bn%C3%AD_diakritiky
      * @param string $data Text with diacritics

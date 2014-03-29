@@ -26,5 +26,7 @@ $lang['media_folder'] = 'Set the name of media folder in the exported ZIP archiv
 $lang['image_params'] = 'Set the default parameters for image insertion.';
 $lang['bibliography_style'] = 'Type in the preferred style of bibliography.';
 $lang['bibliography_name'] = 'Type in the name of .bib file.';
+$lang['link_insertion_message'] = 'The message which is shown as header before every link'
+        . 'which is going to be recursively inserted.';
 $lang['default_table_align'] = 'Sets the default align of cells in tables. As in LaTeX, '
         . 'l stands for left, c stands for center and r for right.';
