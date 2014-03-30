@@ -10,7 +10,8 @@ require_once DOKU_INC . 'lib/plugins/zotero/TextZoteroRepository.php';
 
 class BibHandler {
 
-    private $group;
+    private $id;
+    private $type;
     private $key;
     private $repository;
     private $bib_entries;
@@ -29,8 +30,9 @@ class BibHandler {
         $this->bib_entries = array();
 
         $zotero_config = file_get_contents(DOKU_INC . 'lib/plugins/zotero/config.ini');
-        preg_match('#groupid =([ \d]*)#', $zotero_config, $match);
-        $this->group = trim($match[1]);
+        preg_match('#([usergop]*)id =([ \d]*)#', $zotero_config, $match);
+        $this->type = trim($match[1]) . "s";
+        $this->id = trim($match[2]);
         preg_match('#key =(.*)$#m', $zotero_config, $match);
         $this->key = trim($match[1]);
         preg_match('#cachePage =(.*)$#m', $zotero_config, $match);
@@ -49,8 +51,10 @@ class BibHandler {
         preg_match($regex, $rep, $match);
         $id = $match[1];
 
-        $url = "https://api.zotero.org/groups/" .
-                $this->group
+        $url = "https://api.zotero.org/".
+                $this->type
+                ."/" .
+                $this->id
                 . "/items/" .
                 $id
                 . "?key=" .
@@ -70,4 +74,11 @@ class BibHandler {
         return $bibtex;
     }
 
+    public function isEmpty() {
+        if(empty($this->bib_entries)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

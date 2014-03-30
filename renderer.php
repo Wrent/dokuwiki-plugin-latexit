@@ -126,11 +126,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private $media;
     
-    /**
-     * Is there any Zotero bibliography?
-     * @var Bool 
-     */
-    private $bibliography;
     
     /**
      * Stores the instance of BibHandler
@@ -265,7 +260,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!$this->_immersed()) {
             $this->_n(2);
             
-            if($this->bibliography) {
+            if(!$this->bib_handler->isEmpty()) {
                 $this->_c('bibliographystyle',$this->getConf('bibliography_style'));
                 $this->_c('bibliography',$this->getConf('bibliography_name'), 2);
             }
@@ -280,9 +275,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $output = "output" . time() . ".latex";
 
             //file to download will be ZIP archive
-            if ($this->media || $this->bibliography) {
+            if ($this->media || !$this->bib_handler->isEmpty()) {
                 $filename = $zip->filename;
-                if($this->bibliography) {
+                if(!$this->bib_handler->isEmpty()) {
                     $zip->addFromString($this->getConf('bibliography_name').'.bib', $this->bib_handler->getBibtex());
                 }
                 $zip->addFromString($output, $this->doc);
@@ -1659,10 +1654,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     public function _bibEntry($entry) {
-        $this->bibliography = TRUE;
-        if(is_null($this->bib_handler)) {
-            $this->bib_handler = BibHandler::getInstance();
-        }
         $this->bib_handler->insert($entry);
     }
 
