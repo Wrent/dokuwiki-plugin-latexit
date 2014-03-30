@@ -231,7 +231,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_c('title', $this->getConf('title'));
                 $this->_c('author', $this->getConf('author'));
                 if ($this->getConf('date')) {
-                    $this->_c('date', $this->_c('today'));
+                    $this->_c('date', '\title');
                 }
                 $this->_c('maketitle');
             }
