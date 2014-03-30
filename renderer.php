@@ -183,7 +183,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->rowspan_handler = new RowspanHandler();
         $this->media = FALSE;
         $this->bibliography = FALSE;
-        $this->bib_handler = NULL;
+        $this->bib_handler = BibHandler::getInstance();
 
         //is this recursive export calling on a subpage?
         if (!isset($latexit_level) || is_null($latexit_level)) {
