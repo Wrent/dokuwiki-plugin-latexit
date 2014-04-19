@@ -363,7 +363,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
         //add a label, so each section can be referenced
         $label = $this->label_handler->newLabel($this->_createLabel($text));
-        $this->_c('label', 'sec:'$label);
+        $this->_c('label', 'sec:'.$label);
     }
 
     /**
