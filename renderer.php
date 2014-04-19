@@ -628,7 +628,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function preformatted($text) {
         $this->_n();
         $this->_c('begin', 'verbatim');
-        $this->doc .= $this->_latexSpecialChars($text);
+        $this->doc .= $text;
         $this->_n();
         $this->_c('end', 'verbatim');
     }
@@ -1527,6 +1527,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @return string Label
      */
     private function _createLabel($text) {
+        //FIXME label duplicity
         $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $text);
         $text = $this->_stripDiacritics($text);
         $text = strtolower($text);
@@ -1541,7 +1542,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @return string Escaped URL.
      */
     private function _secureLink($link) {
-        return str_replace("\\", "\\\\", $link);
+        $link = str_replace("\\", "\\\\", $link);
+        $link = str_replace("#", "\#", $link);
+        $link = str_replace("%", "\%", $link);
+        $link = str_replace("&", "\&", $link);
+        return $link;
     }
 
     /**
