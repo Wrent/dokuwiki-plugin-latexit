@@ -22,6 +22,7 @@ require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/BibHandler.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/LabelHandler.php';
+require_once DOKU_INC . 'lib/plugins/latexit/classes/RecursionHandler.php';
 
 /**
  * includes default DokuWiki files containing functions used by latexit plugin
@@ -132,12 +133,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var BibHandler 
      */
     private $bib_handler;
-    
+
     /**
+     * This handler makes all the header labels unique
      * @var LabelHandler
      */
     private $label_handler;
     
+    /**
+     * This handler prevents recursive inserting of subpages to be an unending loop.
+     * @var RecursionHandler 
+     */
+    private $recursion_handler;
+
     /**
      * Make available as LaTeX renderer
      */
@@ -173,6 +181,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $latexit_level;
         global $latexit_headers;
         global $zip;
+        //ID stores the current page id with namespaces, required for recursion prevention
+        global $ID;
+        
 
         //initialize variables
         $this->packages = array();
@@ -184,7 +195,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->media = FALSE;
         $this->bibliography = FALSE;
         $this->bib_handler = BibHandler::getInstance();
-        $this->label_handler = new LabelHandler();
+        $this->label_handler = LabelHandler::getInstance();
+        $this->recursion_handler = RecursionHandler::getInstance();
 
         //is this recursive export calling on a subpage?
         if (!isset($latexit_level) || is_null($latexit_level)) {
@@ -202,6 +214,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $packages = '~~~PACKAGES~~~';
         //export of the main document
         if (!$this->_immersed()) {
+            //the parent documented cannot be recursively inserted somewhere
+            $this->recursion_handler->insert(wikifn($ID));
+            
             //prepare ZIP archive (will not be created, if it isn't necessary)
             $zip = new ZipArchive();
             $this->_prepareZIP();
@@ -363,7 +378,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
         //add a label, so each section can be referenced
         $label = $this->label_handler->newLabel($this->_createLabel($text));
-        $this->_c('label', 'sec:'.$label);
+        $this->_c('label', 'sec:' . $label);
     }
 
     /**
@@ -915,29 +930,36 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //get the whole URL
         $url = wl($link, $params, $absoluteURL);
         $url = $this->_secureLink($url);
-        //teoreticky by se tak dal resit i potencialni rekurze
         if ($this->recursive) {
-            //FIXME bacha na nekonecnou rekurzi
-            //the level of recursion is increasing
-            $latexit_level = $this->recursion_level + 1;
-            $latexit_headers = $this->headers_level;
+            if ($this->recursion_handler->disallow(wikifn($link))) {
+                $this->_n(2);
+                //warn the user about unending recursion
+                $this->doc .= "%!!! RECURSION LOOP HAS BEEN PREVENTED !!!";
+                $this->_n(2);
+            } else {
+                $this->recursion_handler->insert(wikifn($link));
+                //the level of recursion is increasing
+                $latexit_level = $this->recursion_level + 1;
+                $latexit_headers = $this->headers_level;
 
-            //start parsing linked page - call the latexit plugin again
-            $data = p_cached_output(wikifn($link), 'latexit');
-            //get packages from the parsed file
-            $data = $this->_loadPackages($data);
-            $this->_n(2);
-            //insert comment to LaTeX
-            $this->doc .= "%RECURSIVELY INSERTED FILE START";
-            $this->_n(2);
-            //insert parsed data
-            $this->doc .= $data;
-            $this->_n(2);
-            //insert comment to LaTeX
-            $this->doc .= "%RECURSIVELY INSERTED FILE END";
-            $this->_n(2);
-            //get headers level to previous level
-            $this->headers_level -= $this->last_level_increase;
+                //start parsing linked page - call the latexit plugin again
+                $data = p_cached_output(wikifn($link), 'latexit');
+                //get packages from the parsed file
+                $data = $this->_loadPackages($data);
+                $this->_n(2);
+                //insert comment to LaTeX
+                $this->doc .= "%RECURSIVELY INSERTED FILE START";
+                $this->_n(2);
+                //insert parsed data
+                $this->doc .= $data;
+                $this->_n(2);
+                //insert comment to LaTeX
+                $this->doc .= "%RECURSIVELY INSERTED FILE END";
+                $this->_n(2);
+                //get headers level to previous level
+                $this->headers_level -= $this->last_level_increase;
+                $this->recursion_handler->remove(wikifn($link));
+            }
         }
         //handle internal links as they were external
         else {

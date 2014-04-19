@@ -9,10 +9,18 @@
 
 class LabelHandler {
 
+    private static $instance;
     private $labels;
     private $count;
     
-    public function __construct() {
+    public static function getInstance() {
+        if(!isset(LabelHandler::$instance)) {
+            LabelHandler::$instance = new LabelHandler();
+        }
+        return LabelHandler::$instance;
+    }
+    
+    private function __construct() {
         $this->labels = array();
         $this->count = array();
     }
