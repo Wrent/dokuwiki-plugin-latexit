@@ -98,5 +98,16 @@ class Package {
     public function getName() {
         return $this->name;
     }
+    
+    private function hasParameters() {
+        return count($this->parameters);
+    }
+    
+    static function cmpPackages($a, $b) {
+        if($a->hasParameters() == $b->hasParameters()) {
+            return 0;
+        }
+        return ($a->hasParameters() > $b->hasParameters()) ? -1 : +1;
+    }
 
 }

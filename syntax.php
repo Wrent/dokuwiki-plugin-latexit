@@ -45,7 +45,6 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        //FIXME jenom 2-6 vlnek?
         $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
         $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
     }
@@ -70,7 +69,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      */
     public function handle($match, $state, $pos, &$handler) {
         //parse citations from the text (this will be done by this plugin only for latex export)
-        //FIXME regex is from zotero plugin, it has to match exactly
+        //FIXME cite in paper regex is from zotero plugin, it has to match exactly
         if (preg_match("/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/", $match, $matches)) {
             $pageRef = $matches[2];
             $citeKey = $matches[3];
@@ -96,7 +95,26 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
     public function render($mode, &$renderer, $data) {
         //this will count the level of an following header according to number of ~ used
 	if (is_array($data)) {        
-	    $level = -1 * strlen($data[1][0]) + 7;
+            switch($data[1][0]){
+                case 6:
+                    $level = 1;
+                    break;
+                case 5:
+                    $level = 2;
+                    break;
+                case 4:
+                    $level = 3;
+                    break;
+                case 3:
+                    $level = 4;
+                    break;
+                case 2:
+                    $level = 5;
+                    break;
+                default:
+                    $level = 5;
+                    break;
+            }
 	}        
 	if ($mode == 'xhtml') {
             if (is_array($data)) {

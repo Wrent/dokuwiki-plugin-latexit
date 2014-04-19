@@ -125,8 +125,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var boolean
      */
     private $media;
-    
-    
+
     /**
      * Stores the instance of BibHandler
      * @var BibHandler 
@@ -259,26 +258,28 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //this is MAIN PAGE of exported file, we can finalize document
         if (!$this->_immersed()) {
             $this->_n(2);
-            
-            if(!$this->bib_handler->isEmpty()) {
-                $this->_c('bibliographystyle',$this->getConf('bibliography_style'));
-                $this->_c('bibliography',$this->getConf('bibliography_name'), 2);
+
+            if (!$this->bib_handler->isEmpty()) {
+                $this->_c('bibliographystyle', $this->getConf('bibliography_style'));
+                $this->_c('bibliography', $this->getConf('bibliography_name'), 2);
             }
-            
+
             $this->doc .= $this->getConf('document_footer');
             $this->_c('end', 'document');
 
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
+            $this->_fixImageRef();
+
 
             $output = "output" . time() . ".latex";
 
             //file to download will be ZIP archive
             if ($this->media || !$this->bib_handler->isEmpty()) {
                 $filename = $zip->filename;
-                if(!$this->bib_handler->isEmpty()) {
-                    $zip->addFromString($this->getConf('bibliography_name').'.bib', $this->bib_handler->getBibtex());
+                if (!$this->bib_handler->isEmpty()) {
+                    $zip->addFromString($this->getConf('bibliography_name') . '.bib', $this->bib_handler->getBibtex());
                 }
                 $zip->addFromString($output, $this->doc);
                 //zip archive is created when this function is called,
@@ -322,7 +323,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package = new Package('hyperref');
         $package->addParameter('unicode');
         $this->_addPackage($package);
-        
+
         //set the types of headers to be used depending on configuration
         $levels = array();
         if ($this->getConf('header_part')) {
@@ -811,10 +812,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function doublequoteopening() {
         switch ($this->getConf('document_lang')) {
-            /*This is bugging, DW parses it strangely... FIXME consultation
+            /* This is bugging, DW parses it strangely... FIXME consultation
              * case 'czech':
-                $this->_open('uv');
-                break;*/
+              $this->_open('uv');
+              break; */
             default :
                 $this->doc .= ',,';
                 break;
@@ -827,10 +828,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function doublequoteclosing() {
         switch ($this->getConf('document_lang')) {
-            /*This is bugging, DW parses it strangely... FIXME consultation
-            case 'czech':
-                $this->_close();
-                break;*/
+            /* This is bugging, DW parses it strangely... FIXME consultation
+              case 'czech':
+              $this->_close();
+              break; */
             default :
                 $this->doc .= '"';
                 break;
@@ -906,8 +907,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //get the whole URL
         $url = wl($link, $params, $absoluteURL);
         $url = $this->_secureLink($url);
-        //FIXME keep hash in the end? have to test!
-        //FIXME s hashem na konci by se dalo odkazovat na jednotlive sekce dokumentu
         //teoreticky by se tak dal resit i potencialni rekurze
         if ($this->recursive) {
             //FIXME bacha na nekonecnou rekurzi
@@ -1073,7 +1072,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //add file to the ZIP archive
         $path = $media_folder . "/" . $filename;
         $zip->addFile($location, $path);
-             
+
         $mime = mimetype($filename);
 
         if (substr($mime[1], 0, 5) == "image") {
@@ -1092,12 +1091,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function table_open($maxcols = null, $numrows = null, $pos = null) {
         $this->table_cols = $maxcols;
-        
+
         //set environment to tables
         $this->in_table = true;
         $pckg = new Package('longtable');
         $this->_addPackage($pckg);
-        
+
         //print the header
         $this->_c('begin', 'longtable', 0);
         $this->doc .= "{|";
@@ -1309,7 +1308,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if ($this->_immersed()) {
             $packages = serialize($this->packages);
         } else {
-            //FIXME slucovat balicky bez parametru - nejdriv ty s parametry, pak ty bez nich
+            //sort array - packages with params first
+            usort($this->packages, array("Package", "cmpPackages"));
             foreach ($this->packages as $package) {
                 $param = $this->_latexSpecialChars($package->printParameters());
                 $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
@@ -1391,7 +1391,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->_indent_list();
         $this->_c('end', $command);
     }
-    
+
     /**
      * Indents the list according to the last seen level.
      */
@@ -1424,7 +1424,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $matches[2] = $this->_stripDiacritics($matches[2]);
         return '{FIXME[' . $matches[1] . '](' . $matches[2] . ')}';
     }
-
 
     /**
      * Insert header to the LaTeX document with right level command.
@@ -1480,9 +1479,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private function _removeEntities() {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
+    }
 
-        //FIXME - this has to be changed in imagereference plugin - just a walkaround
-        //respective musim implementovat kompletni walkaround pro imagereference :)
+    private function _fixImageRef() {
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
         $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
     }
@@ -1675,7 +1674,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         return $text;
     }
 
-        /**
+    /**
      * Function removing diacritcs from a text.
      * From http://cs.wikibooks.org/wiki/PHP_prakticky/Odstran%C4%9Bn%C3%AD_diakritiky
      * @param string $data Text with diacritics
