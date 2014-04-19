@@ -21,6 +21,7 @@ require_once DOKU_INC . 'inc/parser/renderer.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/Package.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/RowspanHandler.php';
 require_once DOKU_INC . 'lib/plugins/latexit/classes/BibHandler.php';
+require_once DOKU_INC . 'lib/plugins/latexit/classes/LabelHandler.php';
 
 /**
  * includes default DokuWiki files containing functions used by latexit plugin
@@ -131,7 +132,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var BibHandler 
      */
     private $bib_handler;
-
+    
+    /**
+     * @var LabelHandler
+     */
+    private $label_handler;
+    
     /**
      * Make available as LaTeX renderer
      */
@@ -178,6 +184,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->media = FALSE;
         $this->bibliography = FALSE;
         $this->bib_handler = BibHandler::getInstance();
+        $this->label_handler = new LabelHandler();
 
         //is this recursive export calling on a subpage?
         if (!isset($latexit_level) || is_null($latexit_level)) {
@@ -355,7 +362,8 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->_c('textbf', $this->_latexSpecialChars($text));
         }
         //add a label, so each section can be referenced
-        $this->_c('label', $this->_createLabel($text));
+        $label = $this->label_handler->newLabel($this->_createLabel($text));
+        $this->_c('label', 'sec:'$label);
     }
 
     /**
@@ -1526,7 +1534,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @return string Label
      */
     private function _createLabel($text) {
-        //FIXME label duplicity
         $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $text);
         $text = $this->_stripDiacritics($text);
         $text = strtolower($text);
