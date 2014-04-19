@@ -1,6 +1,0 @@
-mkdir ~/latexit
-cp plugin.info.txt ~/latexit
-cp *.php ~/latexit
-cp -r classes/* ~/latexit/
-cp -r conf/ ~/latexit/
-cp -r lang/ ~/latexit/

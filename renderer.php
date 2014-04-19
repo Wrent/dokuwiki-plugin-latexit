@@ -931,12 +931,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $url = wl($link, $params, $absoluteURL);
         $url = $this->_secureLink($url);
         if ($this->recursive) {
+            //check if it can continue with recursive inserting of this page
             if ($this->recursion_handler->disallow(wikifn($link))) {
                 $this->_n(2);
                 //warn the user about unending recursion
                 $this->doc .= "%!!! RECURSION LOOP HAS BEEN PREVENTED !!!";
                 $this->_n(2);
             } else {
+                //insert this page to RecursionHandler
                 $this->recursion_handler->insert(wikifn($link));
                 //the level of recursion is increasing
                 $latexit_level = $this->recursion_level + 1;
@@ -958,6 +960,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_n(2);
                 //get headers level to previous level
                 $this->headers_level -= $this->last_level_increase;
+                //remove this page from RecursionHandler
                 $this->recursion_handler->remove(wikifn($link));
             }
         }
@@ -1511,6 +1514,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
     }
 
+    /**
+     * Functions fixes few problems which come from imagereference plugin.
+     */
     private function _fixImageRef() {
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
         $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
@@ -1565,7 +1571,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Escapes backslash in the URL.
+     * Escapes some characters in the URL.
      * @param string $link The URL.
      * @return string Escaped URL.
      */
@@ -1686,18 +1692,33 @@ class renderer_plugin_latexit extends Doku_Renderer {
         }
     }
 
+    /**
+     * Handle a new BibEntry
+     * @param string $entry
+     */
     public function _bibEntry($entry) {
         $this->bib_handler->insert($entry);
     }
 
+    /**
+     * Escape the text, so it can be used as an pdf string for headers
+     * @param string $text
+     * @return string
+     */
     private function _pdfString($text) {
         $text = $this->_stripDiacritics($this->_latexSpecialChars($text));
         $text = $this->_removeMathAndSymbols($text);
         return $text;
     }
 
+    /**
+     * Removes all math and symbols from the text.
+     * @param string $text
+     * @return string
+     */
     private function _removeMathAndSymbols($text) {
         $text = preg_replace("#\$(.*)\$#", "", $text);
+        //next regex comes from this site:
         //http://stackoverflow.com/questions/5199133/function-to-return-only-alpha-numeric-characters-from-string
         $text = preg_replace("/[^a-zA-Z0-9_ ]+/", "", $text);
         return $text;

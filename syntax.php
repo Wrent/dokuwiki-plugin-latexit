@@ -116,6 +116,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
                     break;
             }
 	}        
+        //inserts the information about set header level even to XHMTL
 	if ($mode == 'xhtml') {
             if (is_array($data)) {
                 $renderer->doc .= '<h' . $level . '>'.$this->getConf('link_insertion_message').'</h' . $level . '>';
