@@ -94,8 +94,9 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      */
     public function render($mode, &$renderer, $data) {
         //this will count the level of an following header according to number of ~ used
-	if (is_array($data)) {        
-            switch($data[1][0]){
+        if (is_array($data)) {  
+            
+            switch(strlen($data[1][0])){
                 case 6:
                     $level = 1;
                     break;
