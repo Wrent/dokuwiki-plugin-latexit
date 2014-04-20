@@ -30,3 +30,4 @@ $lang['link_insertion_message'] = 'The message which is shown as header before e
         . 'which is going to be recursively inserted.';
 $lang['default_table_align'] = 'Sets the default align of cells in tables. As in LaTeX, '
         . 'l stands for left, c stands for center and r for right.';
+$lang['showexportbutton'] = "Show the export button?";

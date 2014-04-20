@@ -5,6 +5,8 @@
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Adam Kučera <adam.kucera@wrent.cz>
+ * @author     Luigi Micco <l.micco@tiscali.it>
+ * @author     Andreas Gohr <andi@splitbrain.org>
  */
 // must be run within Dokuwiki
 if (!defined('DOKU_INC'))
@@ -14,7 +16,6 @@ if (!defined('DOKU_INC'))
  * Latexit uses some function to load plugins.
  */
 require_once DOKU_INC . 'inc/pluginutils.php';
-
 
 /**
  * Action plugin component class handles calling of events before and after
@@ -32,6 +33,42 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgeCache');
         //call _setLatexitSort before initializing language (the very first event in DW)
         $controller->register_hook('INIT_LANG_LOAD', 'BEFORE', $this, '_setLatexitSort');
+
+
+        $controller->register_hook('TEMPLATE_PAGETOOLS_DISPLAY', 'BEFORE', $this, 'addbutton', array());
+    }
+
+    /**
+     * Add 'export pdf'-button to pagetools
+     *
+     * This function is based on dw2pdf plugin.
+     * It is not my own work.
+     * https://github.com/splitbrain/dokuwiki-plugin-dw2pdf/blob/master/
+     * 
+     * @param Doku_Event $event
+     * @param mixed      $param not defined
+     * @author     Luigi Micco <l.micco@tiscali.it>
+     * @author     Andreas Gohr <andi@splitbrain.org>
+     */
+    public function addbutton(&$event, $param) {
+        global $ID, $REV, $conf;
+
+        if ( $this->getConf('showexportbutton') && $event->data['view'] == 'main') {
+            $params = array('do' => 'export_latexit');
+            if ($REV)
+                $params['rev'] = $REV;
+
+            switch ($conf['template']) {
+                case 'dokuwiki':
+                case 'arago':
+                    $event->data['items']['export_latexit'] = '<li>'
+                            . '<a href=' . wl($ID, $params) . '  class="action export_latexit" rel="nofollow" title="Export LaTeX">'
+                            . '<span>Export LaTeX</span>'
+                            . '</a>'
+                            . '</li>';
+                    break;
+            }
+        }
     }
 
     /**

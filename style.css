@@ -1,0 +1,29 @@
+/**
+ * latexit pagetool icon
+ *
+ * This CSS has is based on CSS of dw2pdf plugin
+ * https://github.com/splitbrain/dokuwiki-plugin-dw2pdf/blob/master/
+ *
+ * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author     Luigi Micco <l.micco@tiscali.it>
+ * @author     Andreas Gohr <andi@splitbrain.org>
+ */
+
+/* export icon */
+#dokuwiki__pagetools ul li a.export_latexit {
+    background-position: right 0;
+}
+#dokuwiki__pagetools ul li a.export_latexit:before {
+    content: url(pagetools-latexitexport-sprite.png);
+    margin-top: 0;
+}
+#dokuwiki__pagetools:hover ul li a.export_latexit,
+#dokuwiki__pagetools ul li a.export_latexit:focus,
+#dokuwiki__pagetools ul li a.export_latexit:active {
+    background-image: url(pagetools-latexitexport-sprite.png);
+}
+#dokuwiki__pagetools ul li a.export_latexit:hover,
+#dokuwiki__pagetools ul li a.export_latexit:active,
+#dokuwiki__pagetools ul li a.export_latexit:focus {
+    background-position: right -45px;
+}

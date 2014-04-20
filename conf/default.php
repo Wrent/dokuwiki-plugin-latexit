@@ -28,3 +28,4 @@ $conf['bibliography_style'] = 'plain';
 $conf['bibliography_name'] = 'bibliography';
 $conf['link_insertion_message'] = "Next link is recursively inserted.";
 $conf['default_table_align'] = 'l';
+$conf['showexportbutton'] = 1;
