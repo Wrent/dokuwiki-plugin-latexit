@@ -45,7 +45,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
+        $this->Lexer->addSpecialPattern('~~~*?RECURSIVE~*?~~', $mode, 'plugin_latexit');
         $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
     }
 
@@ -120,7 +120,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
         //inserts the information about set header level even to XHMTL
 	if ($mode == 'xhtml') {
             if (is_array($data)) {
-                $renderer->doc .= '<h' . $level . '>'.$this->getConf('link_insertion_message').'</h' . $level . '>';
+                $renderer->doc .= '<h' . $level . '>'.hsc($this->getConf('link_insertion_message')).'</h' . $level . '>';
             }
             return true;
         } elseif ($mode == 'latex') {
