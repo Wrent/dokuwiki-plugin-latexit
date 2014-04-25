@@ -1380,9 +1380,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //check
         if (preg_match('#~~~MEDIA~~~#si', $this->doc)) {
             $this->media = TRUE;
+            //and delete any traces
+            preg_replace('#~~~MEDIA~~~#si', '', $this->doc);
         }
-        //and delete any traces
-        str_replace("~~~MEDIA~~~", "", $this->doc);
     }
 
     /**

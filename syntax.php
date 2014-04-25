@@ -45,7 +45,7 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('~~~*?RECURSIVE~*?~~', $mode, 'plugin_latexit');
+        $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
         $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
     }
 
