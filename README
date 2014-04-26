@@ -1,9 +1,10 @@
 latexit Plugin for DokuWiki
 
-Plugin to export DokuWiki pages to one LaTeX file.
+Plugin to export multiple DokuWiki pages into one LaTeX file.
+It supports cooperation with plugins imagereference, zotero and mathjax.
 
 All documentation for this plugin can be found at
-https://gitlab.fit.cvut.cz/kucerad5/latexit/
+https://www.dokuwiki.org/plugin:latexit
 
 If you install this plugin manually, make sure it is installed in
 lib/plugins/latexit/ - if the folder is called different it
@@ -11,6 +12,10 @@ will not work!
 
 Please refer to http://www.dokuwiki.org/plugins for additional info
 on how to install plugins in DokuWiki.
+
+This plugin has been implemented as a bachelor's thesis at Faculty of Information
+Technology at Czech Technical University in Prague.
+http://fit.cvut.cz/
 
 ----
 Copyright (C) Adam Kučera <adam.kucera@wrent.cz>
