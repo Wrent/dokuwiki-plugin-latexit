@@ -1,0 +1,15 @@
+**Tučné**
+//Kurzíva//
+__Podtržené__
+''Neproporcionální text''
+<sub>Dolní index</sub>
+<sup>Horní index</sup>
+<del>Přeškrtnuté</del>
+
+Odstavec
+Druhý
+
+Odstavec\\
+Druhý
+
+xxx((Poznámka pod čarou))

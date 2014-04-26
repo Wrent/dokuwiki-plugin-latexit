@@ -1,0 +1,9 @@
+http://fit.cvut.cz
+
+www.fit.cvut.cz
+
+[[http://fit.cvut.cz]]
+
+[[http://fit.cvut.cz|FIT]]
+
+<kucerad5@fit.cvut.cz>

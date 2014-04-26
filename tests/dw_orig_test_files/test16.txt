@@ -1,0 +1,11 @@
+====== LocalLink ======
+[[#locallink|This section]]
+
+====== Another link ======
+[[#another_link|This section]]
+
+[[doku>Interwiki]]
+
+[[file:///P:/Manuals/UserManual.pdf|User Manual]]
+
+[[\\server\share|Windows share]]

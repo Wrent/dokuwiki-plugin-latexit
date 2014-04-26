@@ -1,0 +1,43 @@
+<code java>
+/**
+ * The HelloWorldApp class implements an application that
+ * simply displays "Hello World!" to the standard output.
+ */
+class HelloWorldApp {
+    public static void main(String[] args) {
+        System.out.println("Hello World!"); //Display the string.
+    }
+}
+</code>
+
+<code pascal>
+for i:=maxint to 0 do
+begin
+{ do nothing }
+end;
+Write('Case insensitive');
+Write('Pascal keywords.');
+</code>
+
+<php>
+echo "Hello, Dokuwiki!";
+</php>
+
+<PHP>
+echo "Hello again, Dokuwiki!;
+</PHP>
+
+<html>
+I am <strong>strong</strong>
+</html>
+
+<HTML>
+I am <strong>stronger</strong>
+</HTML>
+
+<file php myexample.php>
+<?php echo "hello world!"; ?>
+</file>
+<code php myexample.php>
+<?php echo "hello world!"; ?>
+</code>

@@ -1,0 +1,1 @@
+Agilni manifest je skvely! \cite{bib:agile-manifesto}. Tohle je sice taky dobry \cite{bib:arlow-uml2-up}, ale \cite{bib:agile-manifesto} je proste nejlepsejsi.

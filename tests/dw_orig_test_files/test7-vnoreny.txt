@@ -1,0 +1,6 @@
+====== Vnořený dokument ======
+
+Text vnořeného dokumentu.
+
+~~~~~RECURSIVE~~~~~
+[[test7-vnoreny2|Vnořený dokument 2]]

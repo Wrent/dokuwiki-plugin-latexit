@@ -1,0 +1,10 @@
+====== Kořenový dokument ======
+
+Text kořenového dokumentu.
+
+~~~~~RECURSIVE~~~~~ 
+[[test7-vnoreny|Vnořený dokument]]
+
+[[test7-vnoreny|Odkaz]]
+
+Text kořenového dokumentu.

@@ -1,0 +1,22 @@
+====== Testovací stránky pro plugin latexit ======
+Pro spuštění testů zavolat soubor v adresáři ''lib/plugins/latexit/tests/script X Y Z'' , kde X značí první test ke spuštění a Y poslední test ke spuštění. (např. 4 7 spustí testy 4,5,6,7). Z pak značí, zda se má spustit export [[projects:industry:profinit:dokument_tacr_jazyk|testovacího projektu]] (1 true, 0 false). 
+
+
+  * TEST 1 - [[test1|Základní hlavička]]
+  * TEST 2 - [[test2|Základní formátování]]
+  * TEST 3 - [[test3|Seznamy]]
+  * TEST 4 - [[test4|Nadpisy]]
+  * TEST 5 - [[test5|Odkazy]]
+  * TEST 6 - [[test6|Interní odkazy]]
+  * TEST 7 - [[test7|Rekurzivní průchod odkazy]]
+  * TEST 8 - [[test8|Tabulky]]
+  * TEST 9 - [[test9|Obrazky]]
+  * TEST 10 - [[test10|Kod]]
+  * TEST 11 - [[test11|FIXME]]
+  * TEST 12 - [[test12|Entity]]
+  * TEST 13 - [[test13|Preformatted a citace]]
+  * TEST 14 - [[test14|No wiki]]
+  * TEST 15 - [[test15|Smileys]]
+  * TEST 16 - [[test16|Special links]]
+  * TEST 17 - [[test17|Zotero]]
+  * TEST 18 - [[test18|Special bug fixes]]

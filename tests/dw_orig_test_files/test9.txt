@@ -1,0 +1,15 @@
+[[:test:start|{{:test:52janeirob.jpg}}]]
+{{:test:52janeirob.jpg|aaa}}
+{{:test:52janeirob.jpg?200}}
+{{:test:52janeirob.jpg?200x50}}
+{{http://media.wowfan.cz/design/logo.png}}
+
+{{ :test:52janeirob.jpg?200}}
+{{ :test:52janeirob.jpg?200 }}
+{{:test:52janeirob.jpg?200 }}
+
+{{:test:surival_guide.pdf|survival guide}}
+{{:test:ebec_2014_tz_kdo_se_stane_nejschopnejsim_technikem_na_cvut-.docx|}}
+{{http://bestprague.cz/misc/Survival Guide.pdf}}
+
+Obrazek
