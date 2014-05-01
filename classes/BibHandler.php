@@ -6,7 +6,6 @@
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Adam Kučera <adam.kucera@wrent.cz>
  */
-require_once DOKU_INC . 'lib/plugins/zotero/TextZoteroRepository.php';
 
 /**
  * Class representing the Bibliography handler.

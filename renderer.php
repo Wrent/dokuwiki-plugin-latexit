@@ -139,7 +139,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @var LabelHandler
      */
     private $label_handler;
-    
+
     /**
      * This handler prevents recursive inserting of subpages to be an unending loop.
      * @var RecursionHandler 
@@ -183,7 +183,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         global $zip;
         //ID stores the current page id with namespaces, required for recursion prevention
         global $ID;
-        
+
 
         //initialize variables
         $this->packages = array();
@@ -194,7 +194,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $this->rowspan_handler = new RowspanHandler();
         $this->media = FALSE;
         $this->bibliography = FALSE;
-        $this->bib_handler = BibHandler::getInstance();
+        if (!plugin_isdisabled('zotero')) {
+            $this->bib_handler = BibHandler::getInstance();
+        } else {
+            $this->bib_handler = NULL;
+        }
         $this->label_handler = LabelHandler::getInstance();
         $this->recursion_handler = RecursionHandler::getInstance();
 
@@ -216,7 +220,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!$this->_immersed()) {
             //the parent documented cannot be recursively inserted somewhere
             $this->recursion_handler->insert(wikifn($ID));
-            
+
             //prepare ZIP archive (will not be created, if it isn't necessary)
             $zip = new ZipArchive();
             $this->_prepareZIP();
@@ -281,7 +285,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         if (!$this->_immersed()) {
             $this->_n(2);
 
-            if (!$this->bib_handler->isEmpty()) {
+            if ($this->_useBibliography() && !$this->bib_handler->isEmpty()) {
                 $this->_c('bibliographystyle', $this->getConf('bibliography_style'));
                 $this->_c('bibliography', $this->getConf('bibliography_name'), 2);
             }
@@ -298,9 +302,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $output = "output" . time() . ".latex";
 
             //file to download will be ZIP archive
-            if ($this->media || !$this->bib_handler->isEmpty()) {
+            if ($this->media || ($this->_useBibliography() && !$this->bib_handler->isEmpty())) {
                 $filename = $zip->filename;
-                if (!$this->bib_handler->isEmpty()) {
+                if ($this->_useBibliography() && !$this->bib_handler->isEmpty()) {
                     $zip->addFromString($this->getConf('bibliography_name') . '.bib', $this->bib_handler->getBibtex());
                 }
                 $zip->addFromString($output, $this->doc);
@@ -1697,7 +1701,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $entry
      */
     public function _bibEntry($entry) {
-        $this->bib_handler->insert($entry);
+        if ($this->_useBibliography()) {
+            $this->bib_handler->insert($entry);
+        }
     }
 
     /**
@@ -1722,6 +1728,14 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //http://stackoverflow.com/questions/5199133/function-to-return-only-alpha-numeric-characters-from-string
         $text = preg_replace("/[^a-zA-Z0-9_ ]+/", "", $text);
         return $text;
+    }
+
+    public function _useBibliography() {
+        if (is_null($this->bib_handler)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
