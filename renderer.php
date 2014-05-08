@@ -325,7 +325,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             else {
                 //set the headers, so the browsers knows, this is not the HTML file
                 header('Content-Type: application/x-latex');
-                header("Content-Disposition: attachment; filename='$output';");
+                header("Content-Disposition: attachment; filename=$output;");
             }
         }
         //this is RECURSIVELY added file    
