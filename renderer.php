@@ -1548,12 +1548,12 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $data Parsed text.
      */
     public function _mathMode($data) {
+        $data = str_replace('<=>', '\Leftrightarrow', $data);
+        $data = str_replace('<->', '\leftrightarrow', $data);
         $data = str_replace('->', '\rightarrow', $data);
         $data = str_replace('<-', '\leftarrow', $data);
-        $data = str_replace('<->', '\leftrightarrow', $data);
         $data = str_replace('=>', '\Rightarrow', $data);
         $data = str_replace('<=', '\Leftarrow', $data);
-        $data = str_replace('<=>', '\Leftrightarrow', $data);
         $data = str_replace('...', '\ldots', $data);
         $data = str_replace('−', '-', $data);
 

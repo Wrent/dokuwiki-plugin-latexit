@@ -66,10 +66,17 @@ class Package {
      */
 
     public function printParameters() {
-        if (count($this->parameters > 0)) {
+        if (count($this->parameters) > 0) {
+            $params .= '[';
+            $first = true;
             foreach ($this->parameters as $p) {
-                $params .= '[' . $p . ']';
+                if(!$first) {
+                    $params .= ", ";
+                }
+                $params .=  $p;
+                $first = false;
             }
+            $params .= ']';
             return $params;
         } else {
             return "";
