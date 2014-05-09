@@ -293,6 +293,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->doc .= $this->getConf('document_footer');
             $this->_c('end', 'document');
 
+            $this->_deleteMediaSyntax();
             //finalize rendering of few entities
             $this->_highlightFixme();
             $this->_removeEntities();
@@ -332,7 +333,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         else {
             //signal to the upper document, that we inserted media to ZIP archive
             if ($this->media) {
-                $this->doc .= '~~~MEDIA~~~';
+                $this->doc .= '%///MEDIA///';
             }
         }
     }
@@ -888,7 +889,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->doc .= $this->_latexSpecialChars($hash);
         }
         $this->doc .= ' (';
-        $this->_c('autoref', $hash, 0);
+        $this->_c('autoref', "sec:".$hash, 0);
         $this->doc .= ')';
     }
 
@@ -1382,11 +1383,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     private function _checkMedia() {
         //check
-        if (preg_match('#~~~MEDIA~~~#si', $this->doc)) {
+        if (preg_match('#%///MEDIA///#si', $this->doc)) {
             $this->media = TRUE;
-            //and delete any traces
-            preg_replace('#~~~MEDIA~~~#si', '', $this->doc);
         }
+        //and delete any traces
+        $this->_deleteMediaSyntax();
+    }
+    
+    /**
+     * Function removes %///MEDIA/// from document
+     */
+    private function _deleteMediaSyntax() {
+        str_replace('%///MEDIA///', '', $this->doc);
     }
 
     /**

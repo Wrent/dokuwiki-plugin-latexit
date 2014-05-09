@@ -1,38 +1,38 @@
 \documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
 \usepackage[czech]{babel}
-\usepackage[unicode]{hyperref}
 \usepackage[normalem]{ulem}
+\usepackage[unicode]{hyperref}
 \begin{document}
 
 \section{\texorpdfstring{Kořenový dokument}{Korenovy dokument}}
-\label{korenovy_dokument}
+\label{sec:korenovy_dokument}
 Text kořenového dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
 \subsection{\texorpdfstring{Vnořený dokument}{Vnoreny dokument}}
-\label{vnoreny_dokument}
+\label{sec:vnoreny_dokument}
 
 Text vnořeného dokumentu.
 
 %RECURSIVELY INSERTED FILE START
 
 \subsubsection{\texorpdfstring{Vnořený dokument 2}{Vnoreny dokument 2}}
-\label{vnoreny_dokument_2}
+\label{sec:vnoreny_dokument_2}
 
 Text vnořeného dokumentu 2
 
 \paragraph{\texorpdfstring{aařa}{aara}}
-\label{aara}
+\label{sec:aara}
 \subparagraph{\texorpdfstring{bbřb}{bbrb}}
-\label{bbrb}
+\label{sec:bbrb}
 ~\newline
 \textbf{ccřc}
-\label{ccrc}
+\label{sec:ccrc}
 ~\newline
 \textbf{ddřd}
-\label{ddrd}
+\label{sec:ddrd}
 
 \sout{deleted}
 

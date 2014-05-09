@@ -6,4 +6,12 @@
 
 \url{http://xref.dokuwiki.org/reference/dokuwiki/inc/parserutils.php.source.html\#l99}
 
+\section{\texorpdfstring{Headline}{Headline}}
+\label{sec:headline}
+
+\section{\texorpdfstring{Headline}{Headline}}
+\label{sec:headline2}
+
+%!!! RECURSION LOOP HAS BEEN PREVENTED !!!
+
 \end{document}

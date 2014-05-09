@@ -1,8 +1,8 @@
 \documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
 \usepackage[czech]{babel}
-\usepackage{longtable}
 \usepackage{multirow}
+\usepackage{longtable}
 \begin{document}
 
 \begin{longtable}{|l|l|l|}

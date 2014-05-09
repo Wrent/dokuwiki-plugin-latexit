@@ -618,11 +618,11 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
      */
     public function test_locallink() {
         $this->r->locallink("section", "Odkaz");
-        $this->assertEquals("Odkaz (\\autoref{section})", $this->r->doc);
+        $this->assertEquals("Odkaz (\\autoref{sec:section})", $this->r->doc);
         $this->clearDoc();
 
         $this->r->locallink("section");
-        $this->assertEquals("section (\\autoref{section})", $this->r->doc);
+        $this->assertEquals("section (\\autoref{sec:section})", $this->r->doc);
     }
 
     /**

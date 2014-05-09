@@ -5,14 +5,14 @@
 \begin{document}
 
 \section{\texorpdfstring{LocalLink}{LocalLink}}
-\label{locallink}
+\label{sec:locallink}
 
-This section (\autoref{locallink})
+This section (\autoref{sec:locallink})
 
 \section{\texorpdfstring{Another link}{Another link}}
-\label{another_link}
+\label{sec:another_link}
 
-This section (\autoref{another_link})
+This section (\autoref{sec:another_link})
 
 \href{http://www.dokuwiki.org/Interwiki}{Interwiki}
 

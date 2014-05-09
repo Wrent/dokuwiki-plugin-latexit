@@ -1,8 +1,8 @@
 \documentclass[a4paper, oneside, 10pt]{article}
 \usepackage[utf8x]{inputenc}
 \usepackage[czech]{babel}
-\usepackage{fixltx2e}
 \usepackage[normalem]{ulem}
+\usepackage{fixltx2e}
 \begin{document}
 
 \textbf{Tučné}
