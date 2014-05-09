@@ -7,4 +7,4 @@ if(file_exists($filename)) {
 }
 $cnt++;
 file_put_contents($filename, $cnt);
-Header("Location: https://github.com/Wrent/dokuwiki-plugin-latexit/archive/master.zip");
+Header("Location: latexit-v1.0.zip");
