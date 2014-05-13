@@ -889,7 +889,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->doc .= $this->_latexSpecialChars($hash);
         }
         $this->doc .= ' (';
-        $this->_c('autoref', "sec:".$hash, 0);
+        $this->_c('autoref', "sec:" . $hash, 0);
         $this->doc .= ')';
     }
 
@@ -1067,13 +1067,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $path .= $namespaces[$i];
         }
 
-        //exported file will be ZIP archive
-        $this->media = TRUE;
+
         //find media on FS
         $location = mediaFN($src);
-        //add media to ZIP archive
-        $zip->addFile($location, $media_folder . "/" . $path);
-
+        $exists = file_exists($location);
+        if ($exists) {
+            //exported file will be ZIP archive
+            $this->media = TRUE;
+            //add media to ZIP archive
+            $zip->addFile($location, $media_folder . "/" . $path);
+        }
 
         $mime = mimetype($src);
         if (substr($mime[1], 0, 5) == "image") {
@@ -1389,7 +1392,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //and delete any traces
         $this->_deleteMediaSyntax();
     }
-    
+
     /**
      * Function removes %///MEDIA/// from document
      */
