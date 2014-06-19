@@ -15,8 +15,8 @@ $meta['output_format'] = array('multichoice', '_choices' =>
     array('oneside', 'twoside'));
 $meta['landscape'] = array('onoff');
 $meta['draft'] = array('onoff');
-$meta['document_header'] = '';
-$meta['document_footer'] = '';
+$meta['document_header'] = array('');
+$meta['document_footer'] = array('');
 //http://ftp.snt.utwente.nl/pub/software/tex/macros/latex/required/babel/base/babel.pdf page 16
 $meta['document_lang'] = array('multichoice', '_choices' =>
     array(
@@ -69,7 +69,7 @@ $meta['author'] = array('string');
 $meta['date'] = array('onoff');
 $meta['table_of_content'] = array('onoff');
 $meta['media_folder'] = array('string');
-$meta['image_params'] = '';
+$meta['image_params'] = array('');
 $meta['bibliography_style'] = array('string');
 $meta['bibliography_name'] = array('string');
 $meta['link_insertion_message'] = array('string');
