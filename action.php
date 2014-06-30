@@ -93,8 +93,10 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
     public function _setLatexitSort(Doku_Event &$event, $param) {
         if (isset($_GET['do']) && $_GET['do'] == 'export_latexit') {
             //load syntax component and set its sort order
-            $syntax_plugin = plugin_load('syntax', 'latexit');
+            $syntax_plugin = plugin_load('syntax', 'latexit_base');
             $syntax_plugin->_setSort(1);
+            $syntax_plugin = plugin_load('syntax', 'latexit_mathjax');
+            $syntax_plugin->_setSort(2);
         }
     }
 

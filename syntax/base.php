@@ -13,7 +13,7 @@ if (!defined('DOKU_INC'))
 /**
  * Syntax component handels all substitutions and new DW commands in original text.
  */
-class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
+class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
 
     /**
      * Order in which this Syntax plugin will be called.
@@ -45,8 +45,8 @@ class syntax_plugin_latexit extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit');
-        $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit');
+        $this->Lexer->addSpecialPattern('~~~*RECURSIVE~*~~', $mode, 'plugin_latexit_base');
+        $this->Lexer->addSpecialPattern('\\\cite.*?\}', $mode, 'plugin_latexit_base');
     }
 
     /**

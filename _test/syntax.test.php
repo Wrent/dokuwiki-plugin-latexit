@@ -6,7 +6,7 @@
  * @group plugin_latexit
  * @group plugins
  */
-class syntax_plugin_latexit_test extends DokuWikiTest {
+class syntax_plugin_latexit_base_test extends DokuWikiTest {
 
     /**
      * These plugins will be loaded for testing.
@@ -25,7 +25,7 @@ class syntax_plugin_latexit_test extends DokuWikiTest {
     public function setUp() {
         parent::setUp();
 
-        $this->s = new syntax_plugin_latexit();
+        $this->s = new syntax_plugin_latexit_base();
     }
 
     /**

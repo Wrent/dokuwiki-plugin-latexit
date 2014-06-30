@@ -62,7 +62,7 @@ class action_plugin_latexit_test extends DokuWikiTest {
         $e = new Doku_Event("event", $data);
         $this->a->_setLatexitSort($e, "");
         //this has to be tested through the involved syntax plugin
-        $syntax_plugin = plugin_load('syntax', 'latexit');
+        $syntax_plugin = plugin_load('syntax', 'latexit_base');
         //test
         $this->assertEquals(1, $syntax_plugin->getSort());
     }
