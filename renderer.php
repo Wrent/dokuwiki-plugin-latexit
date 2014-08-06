@@ -172,6 +172,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
+     * Allow overwriting options from within the document
+     *
+     * @param string $setting
+     * @param bool   $notset
+     * @return mixed
+     */
+    function getConf($setting, $notset = false) {
+        global $ID;
+        $opts = p_get_metadata($ID, 'plugin_latexit');
+        if($opts && isset($opts[$setting])) return $opts[$setting];
+
+        return parent::getConf($setting, $notset);
+    }
+
+    /**
      * function is called, when a document is started to being rendered.
      * It inicializes variables, adds headers to the LaTeX document and
      * sets the browser headers of the exported file.
