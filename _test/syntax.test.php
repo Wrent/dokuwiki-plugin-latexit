@@ -17,7 +17,7 @@ class syntax_plugin_latexit_base_test extends DokuWikiTest {
      * Variable to store the instance of syntax plugin.
      * @var syntax_plugin_latexit
      */
-    private $s;
+    protected $s;
 
     /**
      * Prepares the testing environment.

@@ -16,17 +16,17 @@ class Package {
      * Name of the LaTeX package.
      * @var string 
      */
-    private $name;
+    protected $name;
     /**
      * Array of the package parameters.
      * @var array of strings 
      */
-    private $parameters;
+    protected $parameters;
     /**
      * Array of commands called after inserting the package.
      * @var array of strings
      */
-    private $commands;
+    protected $commands;
 
     /**
      * Creates an Package object.
@@ -106,7 +106,7 @@ class Package {
         return $this->name;
     }
     
-    private function hasParameters() {
+    protected function hasParameters() {
         return count($this->parameters);
     }
     

@@ -22,7 +22,7 @@ class recursionhandler_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of the Recursion Handler.
      * @var RecursionHandler
      */
-    private $r;
+    protected $r;
 
     /**
      * Prepares the testing environment.

@@ -26,7 +26,7 @@ class bibhandler_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of the Bibliography Handler.
      * @var BibHandler
      */
-    private $b;
+    protected $b;
 
     /**
      * Prepares the testing environment

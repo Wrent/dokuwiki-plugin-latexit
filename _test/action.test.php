@@ -18,7 +18,7 @@ class action_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of action plugin.
      * @var action_plugin_latexit
      */
-    private $a;
+    protected $a;
 
     /**
      * Prepares the testing environment.

@@ -18,7 +18,7 @@ class syntax_plugin_latexit_mathjax extends DokuWiki_Syntax_Plugin {
      * Order in which this Syntax plugin will be called.
      * @var int 
      */
-    private $sort;
+    protected $sort;
 
     # We need to grab any math before dokuwiki tries to parse it.
     # Once it's 'claimed' by this plugin (type: protected), it won't be altered.
@@ -27,7 +27,7 @@ class syntax_plugin_latexit_mathjax extends DokuWiki_Syntax_Plugin {
     # Note: "math", "displaymath", and "flalign" environments seem to not be 
     #        recognized by Mathjax...  They will still be protected from Dokuwiki,
     #        but they will not be rendered by MathJax.
-    private static $ENVIRONMENTS = array(
+    protected static $ENVIRONMENTS = array(
         "math",
         "displaymath",
         "equation",
