@@ -44,4 +44,13 @@ class helper_plugin_latexit extends DokuWiki_Plugin {
         return $this->packages;
     }
 
+    /**
+     * Remove the given package from the package list
+     *
+     * @param string $name
+     */
+    public function removePackage($name) {
+        if(isset($this->packages[$name])) unset($this->packages[$name]);
+    }
+
 }
