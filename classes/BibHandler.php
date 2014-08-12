@@ -117,6 +117,7 @@ class BibHandler {
      * @return string
      */
     public function getBibtex() {
+        $bibtex = '';
         foreach ($this->bib_entries as $bib) {
             $bibtex .= $bib . "\n\n";
         }

@@ -66,6 +66,7 @@ class Package {
      */
 
     public function printParameters() {
+        $params = '';
         if (count($this->parameters) > 0) {
             $params .= '[';
             $first = true;
@@ -88,6 +89,7 @@ class Package {
      * @return String Text of commands.
      */
     public function printCommands() {
+        $commands = '';
         if (count($this->commands > 0)) {
             foreach ($this->commands as $c) {
                 $commands .= $c."\n";
@@ -105,11 +107,23 @@ class Package {
     public function getName() {
         return $this->name;
     }
-    
+
+    /**
+     * Check if the command has any parameters
+     *
+     * @return bool
+     */
     protected function hasParameters() {
-        return count($this->parameters);
+        return (bool) $this->parameters;
     }
-    
+
+    /**
+     * Custom comparator to sort Packages
+     *
+     * @param Package $a
+     * @param Package $b
+     * @return int
+     */
     static function cmpPackages($a, $b) {
         if($a->hasParameters() == $b->hasParameters()) {
             return 0;
