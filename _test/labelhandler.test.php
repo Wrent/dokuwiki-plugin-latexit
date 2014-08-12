@@ -22,7 +22,7 @@ class labelhandler_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of the Label Handler.
      * @var LabelHandler
      */
-    private $l;
+    protected $l;
 
     /**
      * Prepares the testing environment.

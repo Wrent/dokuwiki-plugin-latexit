@@ -19,7 +19,7 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of the renderer.
      * @var renderer_plugin_latexit
      */
-    private $r;
+    protected $r;
 
     /**
      * Prepares the testing environment
@@ -37,7 +37,7 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
     /**
      * Clears the document variable.
      */
-    private function clearDoc() {
+    protected function clearDoc() {
         $this->r->doc = '';
     }
 

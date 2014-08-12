@@ -19,7 +19,7 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
      * Order in which this Syntax plugin will be called.
      * @var int 
      */
-    private $sort;
+    protected $sort;
 
     /**
      * @return string Syntax mode type
