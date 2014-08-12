@@ -61,7 +61,7 @@ class RecursionHandler {
     
     /**
      * Removes the page from array and revalues the array.
-     * @param type $page
+     * @param string $page
      */
     public function remove($page) {
         $search = array_search($page, $this->pages);

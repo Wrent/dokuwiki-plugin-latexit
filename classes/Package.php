@@ -30,7 +30,7 @@ class Package {
 
     /**
      * Creates an Package object.
-     * @param $name Name of the package
+     * @param string $name Name of the package
      */
 
     public function __construct($name) {
@@ -41,7 +41,7 @@ class Package {
 
     /**
      * Adds new parameter to the package and prevents duplicates.
-     * @param $name Name of the parameter
+     * @param string $name Name of the parameter
      */
 
     public function addParameter($name) {
@@ -52,7 +52,7 @@ class Package {
     
     /**
      * Adds new command to the package and prevents duplicates.
-     * @param $command Command.
+     * @param string $command Command.
      */
     public function addCommand($command) {
         if (!in_array($command, $this->commands)) {

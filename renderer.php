@@ -148,6 +148,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
     protected $recursion_handler;
 
     /**
+     * @var bool
+     */
+    protected $bibliography;
+
+    /**
      * Constructor
      *
      * Initializes the storage helper
@@ -295,8 +300,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * function is called, when a document ends its rendering to finish the document
      * It finalizes the document.
+     *
      */
     function document_end() {
+        /** @var ZipArchive $zip */
         global $zip;
 
         //if a media were inserted in a recursively added file, we have to push this information up
@@ -771,7 +778,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function smiley($smiley) {
         if ($smiley == 'FIXME' || $smiley == 'DELETEME') {
             $pckg = new Package('soul');
-            $this->_addPackage($pckg);
+            $this->store->addPackage($pckg);
             $this->doc .= $smiley;
         } else {
             $this->doc .= $this->_latexSpecialChars($smiley);
@@ -1068,21 +1075,24 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function is called when an image is uploaded to DokuWiki and inserted to a page.
      * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
      * file in the ZIP archive.
-     * @param type $src DokuWiki source of the media.
-     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
-     * @param type $align Align of the media. 
-     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $cache We delete cache, so we don't use this param.
-     * @param type $linking Not used.
+     *
+     * @param string      $src     DokuWiki source of the media.
+     * @param string|null $title   Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param string|null $align   Align of the media.
+     * @param int|null    $width   Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param int|null    $height  Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param string      $cache   We delete cache, so we don't use this param.
+     * @param bool        $linking Not used.
      */
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        /** @var ZipArchive $zip */
         global $zip;
 
         $media_folder = $this->getConf('media_folder');
 
         //the namespace structure is kept in folder structure in ZIP archive
         $namespaces = explode(':', $src);
+        $path = '';
         for ($i = 1; $i < count($namespaces); $i++) {
             if ($i != 1) {
                 $path .= "/";
@@ -1113,16 +1123,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function is called when an image from the internet is inserted to a page.
      * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
      * file in the ZIP archive.
-     * @param type $src URL source of the media.
-     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
-     * @param type $align Align of the media. 
-     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $cache We delete cache, so we don't use this param.
-     * @param type $linking Not used.
+     *
+     * @param string      $src     URL source of the media.
+     * @param string|null $title   Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param string      $align   Align of the media.
+     * @param int|null    $width   Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param int|null    $height  Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param string|null $cache   We delete cache, so we don't use this param.
+     * @param bool|null   $linking Not used.
      */
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $conf;
+        /** @var ZipArchive $zip */
         global $zip;
 
         $this->media = TRUE;
@@ -1208,9 +1220,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function is called when the header row is reached.
      * It just prints regular row in bold.
-     * @param type $colspan
-     * @param type $align
-     * @param type $rowspan
+     *
+     * @param int         $colspan
+     * @param string|null $align
+     * @param int         $rowspan
      */
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
         $this->tablecell_open($colspan, $align, $rowspan);
@@ -1257,7 +1270,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //start a new rowspan using RowspanHandler
         if ($rowspan != 1) {
             $pckg = new Package('multirow');
-            $this->_addPackage($pckg);
+            $this->store->addPackage($pckg);
             $this->rowspan_handler->insertRowspan($rowspan - 1, $this->cells_count);
             $this->doc .= "\\multirow{" . $rowspan . "}{*}{";
         }
@@ -1285,9 +1298,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Syntax of almost every basic LaTeX command is always the same.
-     * @param $command The name of a LaTeX command.
-     * @param $params Array of parameters of the command
-     * @param $brackets boolean Tells if the brackets should be used.
+     * @param string $command The name of a LaTeX command.
+     * @param array $params Array of parameters of the command
+     * @param bool $brackets Tells if the brackets should be used.
      */
     protected function _open($command, $params = NULL, $brackets = true) {
         $this->doc .= "\\" . $command;
@@ -1457,8 +1470,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Function handling parsing of the fix me DW command.
-     * @param array of strings $matches strings from the regex
-     * @return regex result replacement
+     *
+     * @param array $matches of strings $matches strings from the regex
+     * @return string regex result replacement
      */
     protected function _highlightFixmeHandler($matches) {
         $matches[1] = $this->_stripDiacritics($matches[1]);
@@ -1598,6 +1612,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     protected function _prepareZIP() {
         global $conf;
+        /** @var ZipArchive $zip */
         global $zip;
 
         //generate filename
@@ -1617,7 +1632,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     protected function _insertImage($path, $align, $media_folder) {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
 
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
