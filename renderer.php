@@ -38,10 +38,11 @@ require_once DOKU_INC . 'inc/confutils.php';
 class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
-     * stores all required LaTeX packages
-     * @var array Package
+     * Singleton helper plugin to store data for multiple renderer instances
+     *
+     * @var helper_plugin_latexit
      */
-    private $packages;
+    protected $store;
 
     /**
      * Stores the information about last list level
@@ -147,6 +148,15 @@ class renderer_plugin_latexit extends Doku_Renderer {
     private $recursion_handler;
 
     /**
+     * Constructor
+     *
+     * Initializes the storage helper
+     */
+    public function __construct() {
+        $this->store = $this->loadHelper('latexit');
+    }
+
+    /**
      * Make available as LaTeX renderer
      */
     public function canRender($format) {
@@ -186,7 +196,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
 
         //initialize variables
-        $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
         $this->in_table = FALSE;
@@ -349,7 +358,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //package hyperref will enable PDF bookmarks
         $package = new Package('hyperref');
         $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
 
         //set the types of headers to be used depending on configuration
         $levels = array();
@@ -496,7 +505,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function subscript_open() {
         $package = new Package('fixltx2e');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('textsubscript');
     }
 
@@ -513,7 +522,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function superscript_open() {
         $package = new Package('fixltx2e');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('textsuperscript');
     }
 
@@ -531,7 +540,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function deleted_open() {
         $package = new Package('ulem');
         $package->addParameter('normalem');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('sout');
     }
 
@@ -699,7 +708,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function code($text, $lang = null, $file = null) {
         $pckg = new Package('listings');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
         //start code block
         $this->_open('lstset');
@@ -951,8 +960,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
                 //start parsing linked page - call the latexit plugin again
                 $data = p_cached_output(wikifn($link), 'latexit');
-                //get packages from the parsed file
-                $data = $this->_loadPackages($data);
+
                 $this->_n(2);
                 //insert comment to LaTeX
                 $this->doc .= "%RECURSIVELY INSERTED FILE START";
@@ -1136,7 +1144,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //set environment to tables
         $this->in_table = true;
         $pckg = new Package('longtable');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
         //print the header
         $this->_c('begin', 'longtable', 0);
@@ -1328,57 +1336,27 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Adds name of new package to packages array, but prevents duplicates
-     * @param $package LaTeX package to be used in rendering.
-     */
-    private function _addPackage($package) {
-        foreach ($this->packages as $p) {
-            if ($p->getName() == $package->getName()) {
-                return;
-            }
-        }
-        $this->packages[] = $package;
-    }
-
-    /**
      * Inserts all packages collected during the rendering to the head of the document.
      */
     private function _insertPackages() {
-        //if the page is recursively inserted, packages will have to be added to the parent document
-        //they are serilized in the exported subfile and then loaded again.
-        if ($this->_immersed()) {
-            $packages = serialize($this->packages);
-        } else {
-            //sort array - packages with params first
-            usort($this->packages, array("Package", "cmpPackages"));
-            foreach ($this->packages as $package) {
-                $param = $this->_latexSpecialChars($package->printParameters());
-                $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
-                $packages .= $package->printCommands();
-            }
+        // if the page is recursively inserted, packages will have to be added to the parent document
+        // nothing to do here
+        if ($this->_immersed()) return;
+
+        $packages = $this->store->getPackages();
+
+        //sort array - packages with params first
+        usort($packages, array("Package", "cmpPackages"));
+        $data = '';
+        foreach ($packages as $package) {
+            /** @var  Package $package */
+            $param = $this->_latexSpecialChars($package->printParameters());
+            $data .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
+            $data .= $package->printCommands();
         }
+
         //put the packages text to an appropriate place
-        $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
-    }
-
-    /**
-     * Function used for inserting packages from recursively inserted pages to the main page
-     * It loads packages from given data and adds them as packages.
-     * @param string $data Parsed subpage.
-     * @return string Parsed subpage without packages data (and with packages loaded)
-     */
-    private function _loadPackages($data) {
-        preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
-        $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
-
-        //load packages and insert them
-        $packages = unserialize($pckg[1]);
-        if (!is_null($packages) && is_array($packages)) {
-            foreach ($packages as $package) {
-                $this->_addPackage($package);
-            }
-        }
-        return $data;
+        $this->doc = str_replace('~~~PACKAGES~~~', $data, $this->doc);
     }
 
     /**
@@ -1407,7 +1385,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         $package = new Package('hyperref');
         //fixes the encoding warning
         $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
     }
 
     /**
