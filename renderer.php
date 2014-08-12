@@ -1510,7 +1510,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text Text to be escaped.
      * @return string Escaped text.
      */
-    protected function _latexSpecialChars($text) {
+    public function _latexSpecialChars($text) {
         //find only entities in TEXT, not in eg MathJax
         preg_match('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $text, $entity);
         //replace classic LaTeX escape chars
