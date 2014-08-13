@@ -61,27 +61,32 @@ class Package {
     }
 
     /**
+     * Print this package ready to use
+     *
+     * @return string
+     */
+    public function printUsePackage() {
+        $data  = '\\usepackage';
+        $data .= $this->printParameters();
+        $data .= '{';
+        $data .= helper_plugin_latexit::escape($this->getName());
+        $data .= "}\n";
+        $data .= $this->printCommands();
+
+        return $data;
+    }
+
+    /**
      * Prints all parameters, so they can be used in LaTeX \usepackage command
      * @return String List of parameters in right format.
      */
-
     public function printParameters() {
-        $params = '';
-        if (count($this->parameters) > 0) {
-            $params .= '[';
-            $first = true;
-            foreach ($this->parameters as $p) {
-                if(!$first) {
-                    $params .= ", ";
-                }
-                $params .=  $p;
-                $first = false;
-            }
-            $params .= ']';
-            return $params;
-        } else {
-            return "";
-        }
+        if(!$this->countParameters()) return '';
+
+        $parameters = $this->parameters;
+        $parameters = array_map(array('helper_plugin_latexit', 'escape'), $parameters);
+        $parameters = join(', ', $parameters);
+        return '['.$parameters.']';
     }
     
     /**
@@ -89,15 +94,13 @@ class Package {
      * @return String Text of commands.
      */
     public function printCommands() {
+        if(!count($this->commands)) return '';
+
         $commands = '';
-        if (count($this->commands > 0)) {
-            foreach ($this->commands as $c) {
-                $commands .= $c."\n";
-            }
-            return $commands;
-        } else {
-            return "";
+        foreach ($this->commands as $c) {
+            $commands .= $c."\n";
         }
+        return $commands;
     }
 
     /**
@@ -109,12 +112,12 @@ class Package {
     }
 
     /**
-     * Check if the command has any parameters
+     * Check the number of parameters a command has
      *
      * @return bool
      */
-    protected function hasParameters() {
-        return (bool) $this->parameters;
+    protected function countParameters() {
+        return count($this->parameters);
     }
 
     /**
@@ -125,10 +128,10 @@ class Package {
      * @return int
      */
     static function cmpPackages($a, $b) {
-        if($a->hasParameters() == $b->hasParameters()) {
+        if($a->countParameters() == $b->countParameters()) {
             return 0;
         }
-        return ($a->hasParameters() > $b->hasParameters()) ? -1 : +1;
+        return ($a->countParameters() > $b->countParameters()) ? -1 : +1;
     }
 
 }

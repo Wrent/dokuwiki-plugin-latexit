@@ -243,8 +243,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->headers_level = $latexit_headers;
         }
 
-        //this helper tag will be replaced in the end with all required packages
-        $packages = '~~~PACKAGES~~~';
         //export of the main document
         if (!$this->_immersed()) {
             //the parent documented cannot be recursively inserted somewhere
@@ -254,34 +252,28 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
-            //get document settings
-            $params = array(
-                $this->getConf('paper_size'),
-                $this->getConf('output_format'),
-                $this->getConf('font_size') . 'pt',);
-            if ($this->getConf('landscape')) {
-                $params[] = 'landscape';
-            }
-            if ($this->getConf('draft')) {
-                $params[] = 'draft';
-            }
-            $header = $this->getConf('document_header');
+            // configure language
             $document_lang = $this->getConf('document_lang');
+            $pckg = new Package('babel');
+            $pckg->addParameter($document_lang);
+            $this->store->addPackage($pckg);
 
-            //print document settings
-            $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+            // encoding is always UTF-8
+            $pckg = new Package('inputenc');
+            $pckg->addParameter('utf8x');
+            $this->store->addPackage($pckg);
 
-            $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
-            $this->doc .= $header . $packages;
+            // add metadata to preamble
+            $this->store->addPreamble(array('date', '\today')); // FIXME use the document's date instead
+            $this->store->addPreamble(array('title', $this->getConf('title')));
+            $this->store->addPreamble(array('author', $this->getConf('author')));
+
+
+            // start document
             $this->_c('begin', 'document', 2);
 
             //if title or author or date is set, it prints it
             if ($this->getConf('date') || $this->getConf('title') != "" || $this->getConf('author') != "") {
-                $this->_c('title', $this->getConf('title'));
-                $this->_c('author', $this->getConf('author'));
-                if ($this->getConf('date')) {
-                    $this->_c('date', '\today');
-                }
                 $this->_c('maketitle');
             }
             //if table of contents should be displayed, it prints it
@@ -289,12 +281,53 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_c('tableofcontents', NULL, 2);
             }
         }
-        //document is RECURSIVELY added file to another file
-        else {
-            $this->doc .= '~~~PACKAGES-START~~~';
-            $this->doc .= $packages;
-            $this->doc .= '~~~PACKAGES-END~~~';
+    }
+
+    /**
+     * Prefix the created document with the pramble and packages
+     */
+    protected function document_prefix() {
+        // copy current doc and reset
+        $doc = $this->doc;
+        $this->doc = '';
+
+        //get document settings
+        $params = array(
+            $this->getConf('paper_size'),
+            $this->getConf('output_format'),
+            $this->getConf('font_size') . 'pt',);
+        if ($this->getConf('landscape')) {
+            $params[] = 'landscape';
         }
+        if ($this->getConf('draft')) {
+            $params[] = 'draft';
+        }
+
+        // print document settings
+        $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+
+        // print the packages
+        $packages = $this->store->getPackages();
+        foreach ($packages as $package) {
+            /** @var  Package $package */
+            $this->doc .= $package->printUsePackage();
+        }
+
+        // print the preamble
+        $preamble = $this->store->getPreamble();
+        foreach($preamble as $command) {
+            if(is_array($command)) {
+                $this->_c($command[0], $command[1], $command[2], $command[3]);
+            }else {
+                $this->doc .= $command;
+            }
+        }
+
+        // add custom document header
+        $this->doc .= $this->getConf('document_header');
+
+        // finally readd the previously created document
+        $this->doc .= $doc;
     }
 
     /**
@@ -309,9 +342,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //if a media were inserted in a recursively added file, we have to push this information up
         $this->_checkMedia();
 
-        //insert all packages collected during rendering as \usepackage
-        $this->_insertPackages();
-
         //this is MAIN PAGE of exported file, we can finalize document
         if (!$this->_immersed()) {
             $this->_n(2);
@@ -323,6 +353,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
             $this->doc .= $this->getConf('document_footer');
             $this->_c('end', 'document');
+
+            // the document is done, add the prefix
+            $this->document_prefix();
 
             $this->_deleteMediaSyntax();
             //finalize rendering of few entities
@@ -1364,30 +1397,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
-     * Inserts all packages collected during the rendering to the head of the document.
-     */
-    private function _insertPackages() {
-        // if the page is recursively inserted, packages will have to be added to the parent document
-        // nothing to do here
-        if ($this->_immersed()) return;
-
-        $packages = $this->store->getPackages();
-
-        //sort array - packages with params first
-        usort($packages, array("Package", "cmpPackages"));
-        $data = '';
-        foreach ($packages as $package) {
-            /** @var  Package $package */
-            $param = $this->_latexSpecialChars($package->printParameters());
-            $data .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
-            $data .= $package->printCommands();
-        }
-
-        //put the packages text to an appropriate place
-        $this->doc = str_replace('~~~PACKAGES~~~', $data, $this->doc);
-    }
-
-    /**
      * Function checks, if there were media added in a subfile.
      */
     protected function _checkMedia() {
@@ -1518,15 +1527,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @return string Escaped text.
      */
     public function _latexSpecialChars($text) {
-        //find only entities in TEXT, not in eg MathJax
-        preg_match('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $text, $entity);
-        //replace classic LaTeX escape chars
-        $text = str_replace(array('\\', '{', '}', '&', '%', '$', '#', '_', '~', '^', '<', '>'), array('\textbackslash', '\{', '\}', '\&', '\%', '\$', '\#', '\_', '\textasciitilde{}', '\textasciicircum{}', '\textless ', '\textgreater '), $text);
-        //finalize escaping
-        $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
-        //replace entities in TEXT
-        $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $entity[1], $text);
-        return $text;
+        return helper_plugin_latexit::escape($text);
     }
 
     /**

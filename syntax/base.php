@@ -70,8 +70,8 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
     public function handle($match, $state, $pos, &$handler) {
         //parse citations from the text (this will be done by this plugin only for latex export)
         //FIXME cite in paper regex is from zotero plugin, it has to match exactly
-        if (preg_match("/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/", $match, $matches)) {
-            $pageRef = $matches[2];
+        if (preg_match('/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/', $match, $matches)) {
+            //$pageRef = $matches[2];
             $citeKey = $matches[3];
             return $citeKey;
         } //parse RECURSIVE command
@@ -94,9 +94,9 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
      */
     public function render($mode, &$renderer, $data) {
         //this will count the level of an following header according to number of ~ used
-        if (is_array($data)) {  
-            
-            switch(strlen($data[1][0])){
+        if(is_array($data)) {
+
+            switch(strlen($data[1][0])) {
                 case 6:
                     $level = 1;
                     break;
@@ -116,25 +116,24 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
                     $level = 5;
                     break;
             }
-	}        
+        }
         //inserts the information about set header level even to XHMTL
-	if ($mode == 'xhtml') {
-            if (is_array($data)) {
-                $renderer->doc .= '<h' . $level . '>'.hsc($this->getConf('link_insertion_message')).'</h' . $level . '>';
+        if($mode == 'xhtml') {
+            if(is_array($data)) {
+                $renderer->doc .= '<h'.$level.'>'.hsc($this->getConf('link_insertion_message')).'</h'.$level.'>';
             }
             return true;
-        } elseif ($mode == 'latex') {
+        } elseif($mode == 'latex') {
             //set the next link to be added recursively
-            if (is_array($data)) {
+            if(is_array($data)) {
                 //there might be more plugins rendering latex and calling this functions could cause an error
-                if (method_exists($renderer, '_setRecursive')) {
+                if(method_exists($renderer, '_setRecursive')) {
                     $renderer->_setRecursive(true);
                     $renderer->_increaseLevel($level - 1);
                 }
-            }
-            //insert citation
+            } //insert citation
             else {
-                $renderer->doc .= '\\cite{' . $data . '}';
+                $renderer->doc .= '\\cite{'.$data.'}';
                 $renderer->_bibEntry($data);
             }
             return true;

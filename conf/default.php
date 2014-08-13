@@ -11,10 +11,8 @@ $conf['paper_size'] = 'a4paper';
 $conf['output_format'] = 'oneside';
 $conf['landscape'] = 0;
 $conf['draft'] = 0;
-$conf['document_header'] = '\\usepackage[utf8x]{inputenc}
-';
-$conf['document_footer'] = '
-';
+$conf['document_header'] = '';
+$conf['document_footer'] = '';
 $conf['document_lang'] = "english";
 $conf['header_chapter'] = 0;
 $conf['header_part'] = 0;
