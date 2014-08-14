@@ -10,16 +10,25 @@
 class renderer_plugin_latexit_test extends DokuWikiTest {
 
     /**
-     * These plugins will be loaded for testing.
+     * These plugins will be loaded for testing. Additional ones added in constructor
      * @var array
      */
-    protected $pluginsEnabled = array('latexit', 'mathjax', 'imagereference', 'zotero');
+    protected $pluginsEnabled = array('latexit');
 
     /**
      * Variable to store the instance of the renderer.
      * @var renderer_plugin_latexit
      */
     protected $r;
+
+    /**
+     * Enable additional plugins if available
+     */
+    public function __construct() {
+        if(is_dir(DOKUWIKI_PLUGIN.'mathjax')) $this->pluginsEnabled[] = 'mathjax';
+        if(is_dir(DOKUWIKI_PLUGIN.'imagereference')) $this->pluginsEnabled[] = 'imaereference';
+        if(is_dir(DOKUWIKI_PLUGIN.'zotero')) $this->pluginsEnabled[] = 'zotero';
+    }
 
     /**
      * Prepares the testing environment
