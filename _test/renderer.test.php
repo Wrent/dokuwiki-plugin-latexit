@@ -78,8 +78,7 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
      */
     public function test_document_start() {
         $this->r->document_start();
-        $string = "\documentclass[a4paper, oneside, 10pt]{article}\n\usepackage[utf8x]{inputenc}"
-                . "\n\usepackage[english]{babel}\n~~~PACKAGES~~~\begin{document}\n\n";
+        $string = "\begin{document}\n\n";
 
         $this->assertEquals($string, $this->r->doc);
     }
