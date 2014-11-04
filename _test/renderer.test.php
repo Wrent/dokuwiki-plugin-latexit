@@ -711,6 +711,22 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
         $this->assertEquals($string, $this->r->doc);
     }
 
+    public function test_internalmedia_nons() {
+        $this->r->internalmedia("picture.png", "aaa", "left");
+        $string = "\\raggedleft\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+        $this->clearDoc();
+
+        $this->r->internalmedia("picture.png", "aaa", "center");
+        $string = "\\centering\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+        $this->clearDoc();
+
+        $this->r->internalmedia("picture.png", "aaa", "right");
+        $string = "\\raggedright\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+    }
+
     /**
      * Testing externalmedia method.
      * It does not test packaging of media itself, just insertion of commands.
