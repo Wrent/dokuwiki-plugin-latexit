@@ -1123,16 +1123,19 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         $media_folder = $this->getConf('media_folder');
 
+        if (strpos($src,':') !== false){
         //the namespace structure is kept in folder structure in ZIP archive
-        $namespaces = explode(':', $src);
-        $path = '';
-        for ($i = 1; $i < count($namespaces); $i++) {
-            if ($i != 1) {
-                $path .= "/";
+            $namespaces = explode(':', $src);
+            $path = '';
+            for ($i = 1; $i < count($namespaces); $i++) {
+                if ($i != 1) {
+                    $path .= "/";
+                }
+                $path .= $namespaces[$i];
             }
-            $path .= $namespaces[$i];
+        }else{
+            $path = $src;
         }
-
 
         //find media on FS
         $location = mediaFN($src);
