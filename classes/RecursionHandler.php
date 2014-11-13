@@ -17,12 +17,12 @@ class RecursionHandler {
      * An instance of Recursion Handler
      * @var RecursionHandler 
      */
-    private static $instance;
+    protected static $instance;
     /**
      * Array of all pages currently forbiden for recursion.
      * @var array
      */
-    private $pages;
+    protected $pages;
     
     /**
      * Handler is singleton, it is only accessible using this function.
@@ -38,7 +38,7 @@ class RecursionHandler {
     /**
      * Private constructor.
      */
-    private function __construct() {
+    protected function __construct() {
         $this->pages = array();
     }
     
@@ -61,7 +61,7 @@ class RecursionHandler {
     
     /**
      * Removes the page from array and revalues the array.
-     * @param type $page
+     * @param string $page
      */
     public function remove($page) {
         $search = array_search($page, $this->pages);

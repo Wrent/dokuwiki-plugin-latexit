@@ -16,17 +16,17 @@ class LabelHandler {
      * Instance of a LabelHandler
      * @var LabelHandler
      */
-    private static $instance;
+    protected static $instance;
     /**
      * All used labels.
      * @var array 
      */
-    private $labels;
+    protected $labels;
     /**
      * Usage count of each label.
      * @var array 
      */
-    private $count;
+    protected $count;
     
     /**
      * The handler is singleton, so you can access it only by this function.
@@ -42,7 +42,7 @@ class LabelHandler {
     /**
      * Private constructor can be called only by getInstance method.
      */
-    private function __construct() {
+    protected function __construct() {
         $this->labels = array();
         $this->count = array();
     }

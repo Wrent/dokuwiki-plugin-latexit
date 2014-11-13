@@ -10,16 +10,25 @@
 class renderer_plugin_latexit_test extends DokuWikiTest {
 
     /**
-     * These plugins will be loaded for testing.
+     * These plugins will be loaded for testing. Additional ones added in constructor
      * @var array
      */
-    protected $pluginsEnabled = array('latexit', 'mathjax', 'imagereference', 'zotero');
+    protected $pluginsEnabled = array('latexit');
 
     /**
      * Variable to store the instance of the renderer.
      * @var renderer_plugin_latexit
      */
-    private $r;
+    protected $r;
+
+    /**
+     * Enable additional plugins if available
+     */
+    public function __construct() {
+        if(is_dir(DOKUWIKI_PLUGIN.'mathjax')) $this->pluginsEnabled[] = 'mathjax';
+        if(is_dir(DOKUWIKI_PLUGIN.'imagereference')) $this->pluginsEnabled[] = 'imaereference';
+        if(is_dir(DOKUWIKI_PLUGIN.'zotero')) $this->pluginsEnabled[] = 'zotero';
+    }
 
     /**
      * Prepares the testing environment
@@ -37,7 +46,7 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
     /**
      * Clears the document variable.
      */
-    private function clearDoc() {
+    protected function clearDoc() {
         $this->r->doc = '';
     }
 
@@ -69,8 +78,7 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
      */
     public function test_document_start() {
         $this->r->document_start();
-        $string = "\documentclass[a4paper, oneside, 10pt]{article}\n\usepackage[utf8x]{inputenc}"
-                . "\n\usepackage[english]{babel}\n~~~PACKAGES~~~\begin{document}\n\n";
+        $string = "\begin{document}\n\n";
 
         $this->assertEquals($string, $this->r->doc);
     }
@@ -699,6 +707,22 @@ class renderer_plugin_latexit_test extends DokuWikiTest {
         $this->clearDoc();
 
         $this->r->internalmedia("pic:picture.png", "aaa", "right");
+        $string = "\\raggedright\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+    }
+
+    public function test_internalmedia_nons() {
+        $this->r->internalmedia("picture.png", "aaa", "left");
+        $string = "\\raggedleft\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+        $this->clearDoc();
+
+        $this->r->internalmedia("picture.png", "aaa", "center");
+        $string = "\\centering\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
+        $this->assertEquals($string, $this->r->doc);
+        $this->clearDoc();
+
+        $this->r->internalmedia("picture.png", "aaa", "right");
         $string = "\\raggedright\\includegraphics[keepaspectratio=true,width=0.8\\textwidth]{picture}\n";
         $this->assertEquals($string, $this->r->doc);
     }

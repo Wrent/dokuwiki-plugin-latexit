@@ -16,12 +16,12 @@ class Rowspan {
      * Rowspan itself
      * @var int 
      */
-    private $rowspan;
+    protected $rowspan;
     /**
      * Id of a cell (order in a row), which started rowspan.
      * @var int
      */
-    private $cell_id;
+    protected $cell_id;
            
     /**
      * Creates new rowspan

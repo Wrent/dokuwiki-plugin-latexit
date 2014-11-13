@@ -18,7 +18,7 @@ class RowspanHandler {
      * All rowspans in table are saved here.
      * @var array of Rowspan 
      */
-    private $rowspans;
+    protected $rowspans;
 
     /**
      * Init handler.
@@ -75,7 +75,7 @@ class RowspanHandler {
      * @param int $cell_id Cell order
      * @return int Rowspan position in array.
      */
-    private function findRowspan($cell_id) {
+    protected function findRowspan($cell_id) {
         $i = 0;
         while ($i < count($this->rowspans) && $cell_id != $this->rowspans[$i]->getCellId()) {
             $i++;

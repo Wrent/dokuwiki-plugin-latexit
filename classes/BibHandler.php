@@ -16,32 +16,32 @@ class BibHandler {
      * Zotero $type id
      * @var int
      */
-    private $id;
+    protected $id;
     /**
      * Group or User
      * @var string
      */
-    private $type;
+    protected $type;
     /**
      * Zotero access key
      * @var string 
      */
-    private $key;
+    protected $key;
     /**
      * Zotero local repository location
      * @var string 
      */
-    private $repository;
+    protected $repository;
     /**
      * Bibliography entries itself.
      * @var array
      */
-    private $bib_entries;
+    protected $bib_entries;
     /**
      * An instance of BibHandler
      * @var BibHandler 
      */
-    private static $instance;
+    protected static $instance;
     
     /**
      * BibHandler is singleton, so this function is used to retrive the link to it.
@@ -58,7 +58,7 @@ class BibHandler {
      * Private construktor, only static method can construct it
      * @global array $conf Global DokuWiki configuration
      */
-    private function __construct() {
+    protected function __construct() {
         global $conf;
         $this->bib_entries = array();
 
@@ -117,6 +117,7 @@ class BibHandler {
      * @return string
      */
     public function getBibtex() {
+        $bibtex = '';
         foreach ($this->bib_entries as $bib) {
             $bibtex .= $bib . "\n\n";
         }

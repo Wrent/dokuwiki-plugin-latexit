@@ -26,7 +26,7 @@ class bibhandler_plugin_latexit_test extends DokuWikiTest {
      * Variable to store the instance of the Bibliography Handler.
      * @var BibHandler
      */
-    private $b;
+    protected $b;
 
     /**
      * Prepares the testing environment
@@ -36,6 +36,12 @@ class bibhandler_plugin_latexit_test extends DokuWikiTest {
         global $conf;
 
         parent::setUp();
+
+        if(!is_dir(DOKU_PLUGIN.'zotero')) {
+            $this->markTestSkipped('Zotero Plugin is not installed');
+            return;
+        }
+
         //create page folder for zotero sources.
         $dir = $conf["datadir"] . '/zotero/';
         if (!file_exists($dir)) {

@@ -38,113 +38,128 @@ require_once DOKU_INC . 'inc/confutils.php';
 class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
-     * stores all required LaTeX packages
-     * @var array Package
+     * Singleton helper plugin to store data for multiple renderer instances
+     *
+     * @var helper_plugin_latexit
      */
-    private $packages;
+    protected $store;
 
     /**
      * Stores the information about last list level
      * @var int
      */
-    private $last_level;
+    protected $last_level;
 
     /**
      * Is true when the renderer is in a list
      * @var boolean
      */
-    private $list_opened;
+    protected $list_opened;
 
     /**
      * Stores the information about the level of recursion.
      * It stores the depth of current recusively added file.
      * @var int
      */
-    private $recursion_level;
+    protected $recursion_level;
 
     /**
      * Used in recursively inserted files, stores information about headers level.
      * @var int
      */
-    private $headers_level;
+    protected $headers_level;
 
     /**
      * Is TRUE when recursive inserting should be used.
      * @var bool
      */
-    private $recursive;
+    protected $recursive;
 
     /**
      * Stores the information about the headers level increase in last recursive insertion.
      * @var int
      */
-    private $last_level_increase;
+    protected $last_level_increase;
 
     /**
      * Stores the information about the number of cells found in a table row.
      * @var int
      */
-    private $cells_count;
+    protected $cells_count;
 
     /**
      * Stores the information about the number a table cols.
      * @var int
      */
-    private $table_cols;
+    protected $table_cols;
 
     /**
      * Stores the last colspan in a table.
      * @var int
      */
-    private $last_colspan;
+    protected $last_colspan;
 
     /**
      * Stores the last rowspan in a table.
      * @var int
      */
-    private $last_rowspan;
+    protected $last_rowspan;
 
     /**
      * Stores the last align of a cell in a table.
      * @var int
      */
-    private $last_align;
+    protected $last_align;
 
     /**
      * Is TRUE when renderer is inside a table.
      * @var bool
      */
-    private $in_table;
+    protected $in_table;
 
     /**
      * An instance of a RowspanHandler class.
      * @var RowspanHandler
      */
-    private $rowspan_handler;
+    protected $rowspan_handler;
 
     /**
      * Is set on true if the document contains media.
      * @var boolean
      */
-    private $media;
+    protected $media;
 
     /**
      * Stores the instance of BibHandler
      * @var BibHandler 
      */
-    private $bib_handler;
+    protected $bib_handler;
 
     /**
      * This handler makes all the header labels unique
      * @var LabelHandler
      */
-    private $label_handler;
+    protected $label_handler;
 
     /**
      * This handler prevents recursive inserting of subpages to be an unending loop.
      * @var RecursionHandler 
      */
-    private $recursion_handler;
+    protected $recursion_handler;
+
+    /**
+     * @var bool
+     */
+    protected $bibliography;
+
+    /**
+     * Constructor
+     *
+     * Initializes the storage helper
+     */
+    public function __construct() {
+        $this->store = $this->loadHelper('latexit');
+    }
 
     /**
      * Make available as LaTeX renderer
@@ -172,6 +187,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
     }
 
     /**
+     * Allow overwriting options from within the document
+     *
+     * @param string $setting
+     * @param bool   $notset
+     * @return mixed
+     */
+    function getConf($setting, $notset = false) {
+        global $ID;
+        $opts = p_get_metadata($ID, 'plugin_latexit');
+        if($opts && isset($opts[$setting])) return $opts[$setting];
+
+        return parent::getConf($setting, $notset);
+    }
+
+    /**
      * function is called, when a document is started to being rendered.
      * It inicializes variables, adds headers to the LaTeX document and
      * sets the browser headers of the exported file.
@@ -186,7 +216,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
 
         //initialize variables
-        $this->packages = array();
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
         $this->in_table = FALSE;
@@ -214,8 +243,6 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $this->headers_level = $latexit_headers;
         }
 
-        //this helper tag will be replaced in the end with all required packages
-        $packages = '~~~PACKAGES~~~';
         //export of the main document
         if (!$this->_immersed()) {
             //the parent documented cannot be recursively inserted somewhere
@@ -225,34 +252,28 @@ class renderer_plugin_latexit extends Doku_Renderer {
             $zip = new ZipArchive();
             $this->_prepareZIP();
 
-            //get document settings
-            $params = array(
-                $this->getConf('paper_size'),
-                $this->getConf('output_format'),
-                $this->getConf('font_size') . 'pt',);
-            if ($this->getConf('landscape')) {
-                $params[] = 'landscape';
-            }
-            if ($this->getConf('draft')) {
-                $params[] = 'draft';
-            }
-            $header = $this->getConf('document_header');
+            // configure language
             $document_lang = $this->getConf('document_lang');
+            $pckg = new Package('babel');
+            $pckg->addParameter($document_lang);
+            $this->store->addPackage($pckg);
 
-            //print document settings
-            $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+            // encoding is always UTF-8
+            $pckg = new Package('inputenc');
+            $pckg->addParameter('utf8x');
+            $this->store->addPackage($pckg);
 
-            $header .= "\\usepackage[" . $document_lang . "]{babel}\n";
-            $this->doc .= $header . $packages;
+            // add metadata to preamble
+            $this->store->addPreamble(array('date', '\today')); // FIXME use the document's date instead
+            $this->store->addPreamble(array('title', $this->getConf('title')));
+            $this->store->addPreamble(array('author', $this->getConf('author')));
+
+
+            // start document
             $this->_c('begin', 'document', 2);
 
             //if title or author or date is set, it prints it
             if ($this->getConf('date') || $this->getConf('title') != "" || $this->getConf('author') != "") {
-                $this->_c('title', $this->getConf('title'));
-                $this->_c('author', $this->getConf('author'));
-                if ($this->getConf('date')) {
-                    $this->_c('date', '\today');
-                }
                 $this->_c('maketitle');
             }
             //if table of contents should be displayed, it prints it
@@ -260,26 +281,66 @@ class renderer_plugin_latexit extends Doku_Renderer {
                 $this->_c('tableofcontents', NULL, 2);
             }
         }
-        //document is RECURSIVELY added file to another file
-        else {
-            $this->doc .= '~~~PACKAGES-START~~~';
-            $this->doc .= $packages;
-            $this->doc .= '~~~PACKAGES-END~~~';
+    }
+
+    /**
+     * Prefix the created document with the pramble and packages
+     */
+    protected function document_prefix() {
+        // copy current doc and reset
+        $doc = $this->doc;
+        $this->doc = '';
+
+        //get document settings
+        $params = array(
+            $this->getConf('paper_size'),
+            $this->getConf('output_format'),
+            $this->getConf('font_size') . 'pt',);
+        if ($this->getConf('landscape')) {
+            $params[] = 'landscape';
         }
+        if ($this->getConf('draft')) {
+            $params[] = 'draft';
+        }
+
+        // print document settings
+        $this->_c('documentclass', $this->getConf('document_class'), 1, $params);
+
+        // print the packages
+        $packages = $this->store->getPackages();
+        foreach ($packages as $package) {
+            /** @var  Package $package */
+            $this->doc .= $package->printUsePackage();
+        }
+
+        // print the preamble
+        $preamble = $this->store->getPreamble();
+        foreach($preamble as $command) {
+            if(is_array($command)) {
+                $this->_c($command[0], $command[1], $command[2], $command[3]);
+            }else {
+                $this->doc .= $command;
+            }
+        }
+
+        // add custom document header
+        $this->doc .= $this->getConf('document_header');
+
+        // finally readd the previously created document
+        $this->doc .= $doc;
     }
 
     /**
      * function is called, when a document ends its rendering to finish the document
      * It finalizes the document.
+     *
      */
     function document_end() {
+        /** @var ZipArchive $zip */
         global $zip;
 
         //if a media were inserted in a recursively added file, we have to push this information up
         $this->_checkMedia();
-
-        //insert all packages collected during rendering as \usepackage
-        $this->_insertPackages();
 
         //this is MAIN PAGE of exported file, we can finalize document
         if (!$this->_immersed()) {
@@ -292,6 +353,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
             $this->doc .= $this->getConf('document_footer');
             $this->_c('end', 'document');
+
+            // the document is done, add the prefix
+            $this->document_prefix();
 
             $this->_deleteMediaSyntax();
             //finalize rendering of few entities
@@ -349,7 +413,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //package hyperref will enable PDF bookmarks
         $package = new Package('hyperref');
         $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
 
         //set the types of headers to be used depending on configuration
         $levels = array();
@@ -496,7 +560,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function subscript_open() {
         $package = new Package('fixltx2e');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('textsubscript');
     }
 
@@ -513,7 +577,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function superscript_open() {
         $package = new Package('fixltx2e');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('textsuperscript');
     }
 
@@ -531,7 +595,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function deleted_open() {
         $package = new Package('ulem');
         $package->addParameter('normalem');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
         $this->_open('sout');
     }
 
@@ -699,7 +763,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      */
     function code($text, $lang = null, $file = null) {
         $pckg = new Package('listings');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
         //start code block
         $this->_open('lstset');
@@ -747,7 +811,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     function smiley($smiley) {
         if ($smiley == 'FIXME' || $smiley == 'DELETEME') {
             $pckg = new Package('soul');
-            $this->_addPackage($pckg);
+            $this->store->addPackage($pckg);
             $this->doc .= $smiley;
         } else {
             $this->doc .= $this->_latexSpecialChars($smiley);
@@ -951,8 +1015,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
                 //start parsing linked page - call the latexit plugin again
                 $data = p_cached_output(wikifn($link), 'latexit');
-                //get packages from the parsed file
-                $data = $this->_loadPackages($data);
+
                 $this->_n(2);
                 //insert comment to LaTeX
                 $this->doc .= "%RECURSIVELY INSERTED FILE START";
@@ -1045,28 +1108,34 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function is called when an image is uploaded to DokuWiki and inserted to a page.
      * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
      * file in the ZIP archive.
-     * @param type $src DokuWiki source of the media.
-     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
-     * @param type $align Align of the media. 
-     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $cache We delete cache, so we don't use this param.
-     * @param type $linking Not used.
+     *
+     * @param string      $src     DokuWiki source of the media.
+     * @param string|null $title   Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param string|null $align   Align of the media.
+     * @param int|null    $width   Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param int|null    $height  Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param string      $cache   We delete cache, so we don't use this param.
+     * @param bool        $linking Not used.
      */
     function internalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
+        /** @var ZipArchive $zip */
         global $zip;
 
         $media_folder = $this->getConf('media_folder');
 
+        if (strpos($src,':') !== false){
         //the namespace structure is kept in folder structure in ZIP archive
-        $namespaces = explode(':', $src);
-        for ($i = 1; $i < count($namespaces); $i++) {
-            if ($i != 1) {
-                $path .= "/";
+            $namespaces = explode(':', $src);
+            $path = '';
+            for ($i = 1; $i < count($namespaces); $i++) {
+                if ($i != 1) {
+                    $path .= "/";
+                }
+                $path .= $namespaces[$i];
             }
-            $path .= $namespaces[$i];
+        }else{
+            $path = $src;
         }
-
 
         //find media on FS
         $location = mediaFN($src);
@@ -1090,16 +1159,18 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function is called when an image from the internet is inserted to a page.
      * It adds desired commands to the LaTeX file and also downloads the image with LaTeX
      * file in the ZIP archive.
-     * @param type $src URL source of the media.
-     * @param type $title Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
-     * @param type $align Align of the media. 
-     * @param type $width Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $height Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
-     * @param type $cache We delete cache, so we don't use this param.
-     * @param type $linking Not used.
+     *
+     * @param string      $src     URL source of the media.
+     * @param string|null $title   Mouseover title of image, we dont use this param (use imagareference plugin for correct labeling)
+     * @param string      $align   Align of the media.
+     * @param int|null    $width   Width of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param int|null    $height  Height of the media. But DW uses pixels, LaTeX does not. Therefore we dont use it.
+     * @param string|null $cache   We delete cache, so we don't use this param.
+     * @param bool|null   $linking Not used.
      */
     function externalmedia($src, $title = NULL, $align = NULL, $width = NULL, $height = NULL, $cache = NULL, $linking = NULL) {
         global $conf;
+        /** @var ZipArchive $zip */
         global $zip;
 
         $this->media = TRUE;
@@ -1136,7 +1207,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //set environment to tables
         $this->in_table = true;
         $pckg = new Package('longtable');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
         //print the header
         $this->_c('begin', 'longtable', 0);
@@ -1185,9 +1256,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function is called when the header row is reached.
      * It just prints regular row in bold.
-     * @param type $colspan
-     * @param type $align
-     * @param type $rowspan
+     *
+     * @param int         $colspan
+     * @param string|null $align
+     * @param int         $rowspan
      */
     function tableheader_open($colspan = 1, $align = NULL, $rowspan = 1) {
         $this->tablecell_open($colspan, $align, $rowspan);
@@ -1234,7 +1306,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //start a new rowspan using RowspanHandler
         if ($rowspan != 1) {
             $pckg = new Package('multirow');
-            $this->_addPackage($pckg);
+            $this->store->addPackage($pckg);
             $this->rowspan_handler->insertRowspan($rowspan - 1, $this->cells_count);
             $this->doc .= "\\multirow{" . $rowspan . "}{*}{";
         }
@@ -1262,11 +1334,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Syntax of almost every basic LaTeX command is always the same.
-     * @param $command The name of a LaTeX command.
-     * @param $params Array of parameters of the command
-     * @param $brackets boolean Tells if the brackets should be used.
+     * @param string $command The name of a LaTeX command.
+     * @param array $params Array of parameters of the command
+     * @param bool $brackets Tells if the brackets should be used.
      */
-    private function _open($command, $params = NULL, $brackets = true) {
+    protected function _open($command, $params = NULL, $brackets = true) {
         $this->doc .= "\\" . $command;
         //if params are set, print them all
         if (!is_null($params)) {
@@ -1289,7 +1361,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Closing tag of a lot of LaTeX commands is always same and will be called
      * in almost every close function.
      */
-    private function _close() {
+    protected function _close() {
         $this->doc .= '}';
     }
 
@@ -1301,7 +1373,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param int $newlines How many newlines after the command to insert.
      * @param array $params Array of parameters to be inserted. 
      */
-    private function _c($command, $text = NULL, $newlines = 1, $params = NULL) {
+    protected function _c($command, $text = NULL, $newlines = 1, $params = NULL) {
         //if there is no text, there will be no brackets
         if (is_null($text)) {
             $brackets = false;
@@ -1321,70 +1393,16 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Function inserting new lines in the LaTeX file.
      * @param int $cnt How many new lines to insert.
      */
-    private function _n($cnt = 1) {
+    protected function _n($cnt = 1) {
         for ($i = 0; $i < $cnt; $i++) {
             $this->doc .= "\n";
         }
     }
 
     /**
-     * Adds name of new package to packages array, but prevents duplicates
-     * @param $package LaTeX package to be used in rendering.
-     */
-    private function _addPackage($package) {
-        foreach ($this->packages as $p) {
-            if ($p->getName() == $package->getName()) {
-                return;
-            }
-        }
-        $this->packages[] = $package;
-    }
-
-    /**
-     * Inserts all packages collected during the rendering to the head of the document.
-     */
-    private function _insertPackages() {
-        //if the page is recursively inserted, packages will have to be added to the parent document
-        //they are serilized in the exported subfile and then loaded again.
-        if ($this->_immersed()) {
-            $packages = serialize($this->packages);
-        } else {
-            //sort array - packages with params first
-            usort($this->packages, array("Package", "cmpPackages"));
-            foreach ($this->packages as $package) {
-                $param = $this->_latexSpecialChars($package->printParameters());
-                $packages .= "\\usepackage$param{" . $this->_latexSpecialChars($package->getName()) . "}\n";
-                $packages .= $package->printCommands();
-            }
-        }
-        //put the packages text to an appropriate place
-        $this->doc = str_replace('~~~PACKAGES~~~', $packages, $this->doc);
-    }
-
-    /**
-     * Function used for inserting packages from recursively inserted pages to the main page
-     * It loads packages from given data and adds them as packages.
-     * @param string $data Parsed subpage.
-     * @return string Parsed subpage without packages data (and with packages loaded)
-     */
-    private function _loadPackages($data) {
-        preg_match('#~~~PACKAGES-START~~~(.*?)~~~PACKAGES-END~~~#si', $data, $pckg);
-        $data = preg_replace('#~~~PACKAGES-START~~~.*~~~PACKAGES-END~~~#si', '', $data);
-
-        //load packages and insert them
-        $packages = unserialize($pckg[1]);
-        if (!is_null($packages) && is_array($packages)) {
-            foreach ($packages as $package) {
-                $this->_addPackage($package);
-            }
-        }
-        return $data;
-    }
-
-    /**
      * Function checks, if there were media added in a subfile.
      */
-    private function _checkMedia() {
+    protected function _checkMedia() {
         //check
         if (preg_match('#%///MEDIA///#si', $this->doc)) {
             $this->media = TRUE;
@@ -1396,25 +1414,25 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Function removes %///MEDIA/// from document
      */
-    private function _deleteMediaSyntax() {
+    protected function _deleteMediaSyntax() {
         str_replace('%///MEDIA///', '', $this->doc);
     }
 
     /**
      * Function inserts package used for hyperlinks.
      */
-    private function _insertLinkPackages() {
+    protected function _insertLinkPackages() {
         $package = new Package('hyperref');
         //fixes the encoding warning
         $package->addParameter('unicode');
-        $this->_addPackage($package);
+        $this->store->addPackage($package);
     }
 
     /**
      * Function used for exporting lists, they differ only by command.
      * @param string $command Proper LaTeX list command
      */
-    private function _list_open($command) {
+    protected function _list_open($command) {
         $this->_n();
         if ($this->list_opened) {
             for ($i = 1; $i < $this->last_level + 1; $i++) {
@@ -1432,7 +1450,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Function used for exporting the end of lists, they differ only by command.
      * @param string $command Proper LaTeX list command
      */
-    private function _list_close($command) {
+    protected function _list_close($command) {
         if ($this->last_level == 1) {
             $this->list_opened = FALSE;
         }
@@ -1443,7 +1461,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
     /**
      * Indents the list according to the last seen level.
      */
-    private function _indent_list() {
+    protected function _indent_list() {
         for ($i = 1; $i < $this->last_level; $i++) {
             $this->doc .= '  ';
         }
@@ -1456,7 +1474,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * format is: FIXME[author](description of a thing to fix)
      * (this feature comes from CCM at FIT CVUT, for whom I write the plugin)
      */
-    private function _highlightFixme() {
+    protected function _highlightFixme() {
         $this->doc = str_replace('FIXME', '\hl{FIXME}', $this->doc);
         $this->doc = str_replace('DELETEME', '\hl{DELETEME}', $this->doc);
         $this->doc = preg_replace_callback('#{FIXME}\[(.*?)\]\((.*?)\)#si', array(&$this, '_highlightFixmeHandler'), $this->doc);
@@ -1464,10 +1482,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
     /**
      * Function handling parsing of the fix me DW command.
-     * @param array of strings $matches strings from the regex
-     * @return regex result replacement
+     *
+     * @param array $matches of strings $matches strings from the regex
+     * @return string regex result replacement
      */
-    private function _highlightFixmeHandler($matches) {
+    protected function _highlightFixmeHandler($matches) {
         $matches[1] = $this->_stripDiacritics($matches[1]);
         $matches[2] = $this->_stripDiacritics($matches[2]);
         return '{FIXME[' . $matches[1] . '](' . $matches[2] . ')}';
@@ -1478,7 +1497,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $level LaTeX command for header on right level.
      * @param string $text Text of the Header.
      */
-    private function _header($level, $text) {
+    protected function _header($level, $text) {
         $this->_open($level);
         //pdflatex can have problems with special chars while making bookmarks
         //this is the fix
@@ -1497,7 +1516,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * This function finds out, if the current renderer is immersed in recursion.
      * @return boolean Is immersed in recursion?
      */
-    private function _immersed() {
+    protected function _immersed() {
         if ($this->recursion_level > 0) {
             return true;
         }
@@ -1510,29 +1529,21 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text Text to be escaped.
      * @return string Escaped text.
      */
-    private function _latexSpecialChars($text) {
-        //find only entities in TEXT, not in eg MathJax
-        preg_match('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $text, $entity);
-        //replace classic LaTeX escape chars
-        $text = str_replace(array('\\', '{', '}', '&', '%', '$', '#', '_', '~', '^', '<', '>'), array('\textbackslash', '\{', '\}', '\&', '\%', '\$', '\#', '\_', '\textasciitilde{}', '\textasciicircum{}', '\textless ', '\textgreater '), $text);
-        //finalize escaping
-        $text = str_replace('\\textbackslash', '\textbackslash{}', $text);
-        //replace entities in TEXT
-        $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', $entity[1], $text);
-        return $text;
+    public function _latexSpecialChars($text) {
+        return helper_plugin_latexit::escape($text);
     }
 
     /**
      * Function replaces entities, which have not been replaced using _latexSpecialChars function
      */
-    private function _removeEntities() {
+    protected function _removeEntities() {
         $this->doc = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $this->doc);
     }
 
     /**
      * Functions fixes few problems which come from imagereference plugin.
      */
-    private function _fixImageRef() {
+    protected function _fixImageRef() {
         $this->doc = str_replace('[h!]{\centering}', '[!ht]{\centering}', $this->doc);
         $this->doc = str_replace('\\ref{', '\autoref{', $this->doc);
     }
@@ -1576,7 +1587,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text A header name.
      * @return string Label
      */
-    private function _createLabel($text) {
+    protected function _createLabel($text) {
         $text = preg_replace('#///ENTITYSTART///(.*?)///ENTITYEND///#si', '$1', $text);
         $text = $this->_stripDiacritics($text);
         $text = strtolower($text);
@@ -1590,7 +1601,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $link The URL.
      * @return string Escaped URL.
      */
-    private function _secureLink($link) {
+    protected function _secureLink($link) {
         $link = str_replace("\\", "\\\\", $link);
         $link = str_replace("#", "\#", $link);
         $link = str_replace("%", "\%", $link);
@@ -1603,8 +1614,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @global string $conf global dokuwiki configuration
      * @global ZipArchive $zip pointer to our zip archive
      */
-    private function _prepareZIP() {
+    protected function _prepareZIP() {
         global $conf;
+        /** @var ZipArchive $zip */
         global $zip;
 
         //generate filename
@@ -1621,10 +1633,10 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $align image align
      * @param string $media_folder path to the media folder.
      */
-    private function _insertImage($path, $align, $media_folder) {
+    protected function _insertImage($path, $align, $media_folder) {
         $pckg = new Package('graphicx');
         $pckg->addCommand('\\graphicspath{{' . $media_folder . '/}}');
-        $this->_addPackage($pckg);
+        $this->store->addPackage($pckg);
 
 
         //http://stackoverflow.com/questions/2395882/how-to-remove-extension-from-string-only-real-extension
@@ -1656,7 +1668,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $title Title of the link.
      * @param string $media_folder Location of media folder.
      */
-    private function _insertFile($path, $title, $media_folder) {
+    protected function _insertFile($path, $title, $media_folder) {
         $path = $media_folder . "/" . $path;
         $this->filelink($path, $title);
     }
@@ -1668,7 +1680,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $type Link type (internal/external/email)
      * @param string $link_original Original link (for internal links it is used as a title)
      */
-    private function _insertLink($url, $title, $type, $link_original = NULL) {
+    protected function _insertLink($url, $title, $type, $link_original = NULL) {
         $this->_insertLinkPackages();
 
         if ($type == "email") {
@@ -1722,7 +1734,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text
      * @return string
      */
-    private function _pdfString($text) {
+    protected function _pdfString($text) {
         $text = $this->_stripDiacritics($this->_latexSpecialChars($text));
         $text = $this->_removeMathAndSymbols($text);
         return $text;
@@ -1733,7 +1745,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $text
      * @return string
      */
-    private function _removeMathAndSymbols($text) {
+    protected function _removeMathAndSymbols($text) {
         $text = preg_replace("#\$(.*)\$#", "", $text);
         //next regex comes from this site:
         //http://stackoverflow.com/questions/5199133/function-to-return-only-alpha-numeric-characters-from-string
@@ -1755,7 +1767,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * @param string $data Text with diacritics
      * @return string Text withou diacritics
      */
-    private function _stripDiacritics($data) {
+    protected function _stripDiacritics($data) {
         $table = Array(
             'ä' => 'a',
             'Ä' => 'A',

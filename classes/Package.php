@@ -16,21 +16,21 @@ class Package {
      * Name of the LaTeX package.
      * @var string 
      */
-    private $name;
+    protected $name;
     /**
      * Array of the package parameters.
      * @var array of strings 
      */
-    private $parameters;
+    protected $parameters;
     /**
      * Array of commands called after inserting the package.
      * @var array of strings
      */
-    private $commands;
+    protected $commands;
 
     /**
      * Creates an Package object.
-     * @param $name Name of the package
+     * @param string $name Name of the package
      */
 
     public function __construct($name) {
@@ -41,7 +41,7 @@ class Package {
 
     /**
      * Adds new parameter to the package and prevents duplicates.
-     * @param $name Name of the parameter
+     * @param string $name Name of the parameter
      */
 
     public function addParameter($name) {
@@ -52,7 +52,7 @@ class Package {
     
     /**
      * Adds new command to the package and prevents duplicates.
-     * @param $command Command.
+     * @param string $command Command.
      */
     public function addCommand($command) {
         if (!in_array($command, $this->commands)) {
@@ -61,26 +61,32 @@ class Package {
     }
 
     /**
+     * Print this package ready to use
+     *
+     * @return string
+     */
+    public function printUsePackage() {
+        $data  = '\\usepackage';
+        $data .= $this->printParameters();
+        $data .= '{';
+        $data .= helper_plugin_latexit::escape($this->getName());
+        $data .= "}\n";
+        $data .= $this->printCommands();
+
+        return $data;
+    }
+
+    /**
      * Prints all parameters, so they can be used in LaTeX \usepackage command
      * @return String List of parameters in right format.
      */
-
     public function printParameters() {
-        if (count($this->parameters) > 0) {
-            $params .= '[';
-            $first = true;
-            foreach ($this->parameters as $p) {
-                if(!$first) {
-                    $params .= ", ";
-                }
-                $params .=  $p;
-                $first = false;
-            }
-            $params .= ']';
-            return $params;
-        } else {
-            return "";
-        }
+        if(!$this->countParameters()) return '';
+
+        $parameters = $this->parameters;
+        $parameters = array_map(array('helper_plugin_latexit', 'escape'), $parameters);
+        $parameters = join(', ', $parameters);
+        return '['.$parameters.']';
     }
     
     /**
@@ -88,14 +94,13 @@ class Package {
      * @return String Text of commands.
      */
     public function printCommands() {
-        if (count($this->commands > 0)) {
-            foreach ($this->commands as $c) {
-                $commands .= $c."\n";
-            }
-            return $commands;
-        } else {
-            return "";
+        if(!count($this->commands)) return '';
+
+        $commands = '';
+        foreach ($this->commands as $c) {
+            $commands .= $c."\n";
         }
+        return $commands;
     }
 
     /**
@@ -105,16 +110,28 @@ class Package {
     public function getName() {
         return $this->name;
     }
-    
-    private function hasParameters() {
+
+    /**
+     * Check the number of parameters a command has
+     *
+     * @return bool
+     */
+    protected function countParameters() {
         return count($this->parameters);
     }
-    
+
+    /**
+     * Custom comparator to sort Packages
+     *
+     * @param Package $a
+     * @param Package $b
+     * @return int
+     */
     static function cmpPackages($a, $b) {
-        if($a->hasParameters() == $b->hasParameters()) {
+        if($a->countParameters() == $b->countParameters()) {
             return 0;
         }
-        return ($a->hasParameters() > $b->hasParameters()) ? -1 : +1;
+        return ($a->countParameters() > $b->countParameters()) ? -1 : +1;
     }
 
 }
