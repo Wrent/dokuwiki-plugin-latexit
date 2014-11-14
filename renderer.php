@@ -158,7 +158,7 @@ class renderer_plugin_latexit extends Doku_Renderer {
      * Initializes the storage helper
      */
     public function __construct() {
-        $this->store = $this->loadHelper('latexit');
+        $this->_initializeStore();
     }
 
     /**
@@ -214,7 +214,11 @@ class renderer_plugin_latexit extends Doku_Renderer {
         //ID stores the current page id with namespaces, required for recursion prevention
         global $ID;
 
-
+        if(is_null($this->store)) {
+            $this->_initializeStore();
+            echo "aaa";
+        }
+        
         //initialize variables
         $this->list_opened = FALSE;
         $this->recursive = FALSE;
@@ -1759,6 +1763,13 @@ class renderer_plugin_latexit extends Doku_Renderer {
         } else {
             return true;
         }
+    }
+    
+    /**
+     * Initializes store variable.
+     */
+    protected function _initializeStore() {
+        $this->store = $this->loadHelper('latexit', true);
     }
 
     /**

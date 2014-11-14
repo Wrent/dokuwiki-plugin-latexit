@@ -1,2 +1,2 @@
-zip release.zip classes/* conf/* lang/* README action.php pagetools-latexitexport-sprite.png plugin.info.txt renderer.php style.css syntax.php
+zip release.zip classes/* conf/* lang/* README action.php pagetools-latexitexport-sprite.png plugin.info.txt renderer.php style.css syntax/* helper.php
 
