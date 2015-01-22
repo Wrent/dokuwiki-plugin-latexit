@@ -64,6 +64,7 @@ $meta['document_lang'] = array('multichoice', '_choices' =>
         ));
 $meta['header_chapter'] = array('onoff');
 $meta['header_part'] = array('onoff');
+$meta['header_title'] = array('onoff');
 $meta['title'] = array('string');
 $meta['author'] = array('string');
 $meta['date'] = array('onoff');

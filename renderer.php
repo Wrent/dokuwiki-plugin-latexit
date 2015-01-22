@@ -421,6 +421,9 @@ class renderer_plugin_latexit extends Doku_Renderer {
 
         //set the types of headers to be used depending on configuration
         $levels = array();
+        if ($this->getConf('header_title')) {
+            $levels[] = 'title';
+        }
         if ($this->getConf('header_part')) {
             $levels[] = 'part';
         }
