@@ -48,7 +48,7 @@ class syntax_plugin_latexit_config extends DokuWiki_Syntax_Plugin {
      * @param Doku_Handler $handler The handler
      * @return array Data for the renderer
      */
-    public function handle($match, $state, $pos, &$handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         list($key, $val) = explode(' ', trim(substr($match, 10, -2)), 2);
         $key = trim($key);
         $val = trim($val);
@@ -64,7 +64,7 @@ class syntax_plugin_latexit_config extends DokuWiki_Syntax_Plugin {
      * @param array         $data      The data from the handler() function
      * @return bool If rendering was successful.
      */
-    public function render($mode, &$renderer, $data) {
+    public function render($mode, Doku_Renderer $renderer, $data) {
         if($mode != 'metadata') return false;
 
         list($key, $val) = $data;

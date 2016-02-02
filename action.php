@@ -28,7 +28,7 @@ class action_plugin_latexit extends DokuWiki_Action_Plugin {
      *
      * @param Doku_Event_Handler $controller DokuWiki's event controller object
      */
-    public function register(Doku_Event_Handler &$controller) {
+    public function register(Doku_Event_Handler $controller) {
         //call _purgeCache before using parser's cache
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, '_purgeCache');
         //call _setLatexitSort before initializing language (the very first event in DW)
