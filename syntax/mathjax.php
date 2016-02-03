@@ -115,7 +115,7 @@ class syntax_plugin_latexit_mathjax extends DokuWiki_Syntax_Plugin {
      * @param Doku_Handler    $handler The handler
      * @return array Data for the renderer
      */
-    public function handle($match, $state, $pos, &$handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         // Just pass it through...
         return $match;
     }
@@ -128,7 +128,7 @@ class syntax_plugin_latexit_mathjax extends DokuWiki_Syntax_Plugin {
      * @param array          $data      The data from the handler() function
      * @return bool If rendering was successful.
      */
-    public function render($mode, &$renderer, $data) {
+    public function render($mode, Doku_Renderer $renderer, $data) {
         if ($mode == 'latex') {
             $renderer->_mathMode($data);
             return true;

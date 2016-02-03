@@ -67,7 +67,7 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
      * @param Doku_Handler    $handler The handler
      * @return array Data for the renderer
      */
-    public function handle($match, $state, $pos, &$handler) {
+    public function handle($match, $state, $pos, Doku_Handler $handler) {
         //parse citations from the text (this will be done by this plugin only for latex export)
         //FIXME cite in paper regex is from zotero plugin, it has to match exactly
         if (preg_match('/\\\cite(\[([a-zA-Z0-9 \.,\-:]*)\])?\{([a-zA-Z0-9\-:]*?)\}/', $match, $matches)) {
@@ -92,7 +92,7 @@ class syntax_plugin_latexit_base extends DokuWiki_Syntax_Plugin {
      * @param array          $data      The data from the handler() function
      * @return bool If rendering was successful.
      */
-    public function render($mode, &$renderer, $data) {
+    public function render($mode, Doku_Renderer $renderer, $data) {
         //this will count the level of an following header according to number of ~ used
         if(is_array($data)) {
 
